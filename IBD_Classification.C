@@ -78,25 +78,25 @@ void IBD_Classification( TString myMethodList = "" )
 
    // --- Cut optimisation
    Use["Cuts"]            = 1;
-   Use["CutsD"]           = 1;
+   Use["CutsD"]           = 0;
    Use["CutsPCA"]         = 0;
    Use["CutsGA"]          = 0;
    Use["CutsSA"]          = 0;
    // 
    // --- 1-dimensional likelihood ("naive Bayes estimator")
-   Use["Likelihood"]      = 1;
+   Use["Likelihood"]      = 0;
    Use["LikelihoodD"]     = 0; // the "D" extension indicates decorrelated input variables (see option strings)
-   Use["LikelihoodPCA"]   = 1; // the "PCA" extension indicates PCA-transformed input variables (see option strings)
+   Use["LikelihoodPCA"]   = 0; // the "PCA" extension indicates PCA-transformed input variables (see option strings)
    Use["LikelihoodKDE"]   = 0;
    Use["LikelihoodMIX"]   = 0;
    //
    // --- Mutidimensional likelihood and Nearest-Neighbour methods
-   Use["PDERS"]           = 1;
+   Use["PDERS"]           = 0;
    Use["PDERSD"]          = 0;
    Use["PDERSPCA"]        = 0;
-   Use["PDEFoam"]         = 1;
+   Use["PDEFoam"]         = 0;
    Use["PDEFoamBoost"]    = 0; // uses generalised MVA method boosting
-   Use["KNN"]             = 1; // k-nearest neighbour method
+   Use["KNN"]             = 0; // k-nearest neighbour method
    //
    // --- Linear Discriminant Analysis
    Use["LD"]              = 0; // Linear Discriminant identical to Fisher
@@ -116,7 +116,7 @@ void IBD_Classification( TString myMethodList = "" )
    // --- Neural Networks (all are feed-forward Multilayer Perceptrons)
    Use["MLP"]             = 0; // Recommended ANN
    Use["MLPBFGS"]         = 0; // Recommended ANN with optional training method
-   Use["MLPBNN"]          = 1; // Recommended ANN with BFGS training method and bayesian regulator
+   Use["MLPBNN"]          = 0; // Recommended ANN with BFGS training method and bayesian regulator
    Use["CFMlpANN"]        = 0; // Depreciated ANN from ALEPH
    Use["TMlpANN"]         = 0; // ROOT's own ANN
    //
@@ -124,7 +124,7 @@ void IBD_Classification( TString myMethodList = "" )
    Use["SVM"]             = 0;
    // 
    // --- Boosted Decision Trees
-   Use["BDT"]             = 1; // uses Adaptive Boost
+   Use["BDT"]             = 0; // uses Adaptive Boost
    Use["BDTG"]            = 0; // uses Gradient Boost
    Use["BDTB"]            = 0; // uses Bagging
    Use["BDTD"]            = 0; // decorrelation + Adaptive Boost
@@ -173,17 +173,24 @@ void IBD_Classification( TString myMethodList = "" )
 
    // Define the input variables that shall be used for the MVA training
    // note that you may also use variable expressions, such as: "3*var1/var2*abs(var3)"
-   factory->AddVariable( "inner_dist_fv", "interevent distance","m",'F' );
+   factory->AddVariable( "interevent_dist_fv", "interevent distance","mm",'F' );
    factory->AddVariable( "interevent_time", "interevent time","ns", 'F' );
-   factory->AddVariable( "ITR := n9/nhit", "in time ratio", "no units", 'F' );
-   factory->AddVariable( "pos_goodness", "position fit goodness", "no units", 'f' );
-   //factory->AddVariable( "var3 := inner_dist_fv/n9",  "idf / n9", "m", 'F' );
+   factory->AddVariable( "D_ITR := n9/nhit", "delayed in time ratio", "no units", 'F' );
+   factory->AddVariable( "P_ITR := n9_prev/nhit_prev", "prompt in-time ratio", "no units", 'F' );
+   factory->AddVariable( "pos_goodness", "delayed position fit goodness", "no units", 'F' );
+   factory->AddVariable( "pos_goodness_prev", "prompt position fit goodness", "no units", 'F' );
+   //factory->AddVariable( "dir_goodness", "delayed direction fit goodness", "no units", 'F' );
+
+   //factory->AddVariable( "dir_goodness_prev", "prompt direction fit goodness", "no units", 'F' );
+   factory->AddVariable( "pe", "delayed P.E. count", "PE", 'F' );
+   factory->AddVariable( "pe_prev", "prompt P.E. count", "PE", 'F' );
+
    // You can add so-called "Spectator variables", which are not used in the MVA training,
    // but will appear in the final "TestTree" produced by TMVA. 
-   factory->AddSpectator( "n9",  "n9", "nhit", 'F' );
+   //factory->AddSpectator( "n9",  "n9", "nhit", 'F' );
 
    // Read training and test data
-   TString fname = "./IBD_FN_ALL_SB_WTIME.root";
+   TString fname = "./IBD_ACC_SB.root";
    
    if (gSystem->AccessPathName( fname ))  // file does not exist in local directory
       cout << "AAAH, YOUR FILE DOES NOT EXISTTTT" << endl;
@@ -218,30 +225,30 @@ void IBD_Classification( TString myMethodList = "" )
    //factory->SetBackgroundWeightExpression( "weight" );
 
    // Apply additional cuts on the signal and background samples (can be different)
-   TCut mycuts = ""; // for example: TCut mycuts = "abs(var1)<0.5 && abs(var2-0.5)<1";
-   TCut mycutb = ""; // for example: TCut mycutb = "abs(var1)<0.5";
+   TCut mycuts = "dir_goodness > 0.1 && dir_goodness_prev > 0.1 && interevent_time<150000"; // for example: TCut mycuts = "abs(var1)<0.5 && abs(var2-0.5)<1";
+   TCut mycutb = "dir_goodness > 0.1 && dir_goodness_prev > 0.1"; // for example: TCut mycutb = "abs(var1)<0.5";
 
    // Tell the factory how to use the training and testing events
    //
    // If no numbers of events are given, half of the events in the tree are used 
    // for training, and the other half for testing:
-   //    factory->PrepareTrainingAndTestTree( mycut, "SplitMode=random:!V" );
+   //    factory->PrepareTrainingAndTestTree( mycuts, "SplitMode=random:!V" );
    // To also specify the number of testing events, use:
    //  factory->PrepareTrainingAndTestTree( mycuts,
-   //                                         "NSigTrain=20000:NBkgTrain=20000:NSigTest=20000:NBkgTest=20000:SplitMode=Random:!V" );
+   //                                         "NSigTrain=2500:NBkgTrain=2500:NSigTest=20000:NBkgTest=2500:SplitMode=Random:!V" );
    factory->PrepareTrainingAndTestTree( mycuts, mycutb,
-                                        "nTrain_Signal=3000:nTrain_Background=3000:SplitMode=Random:NormMode=NumEvents:!V" );
+                                        "nTrain_Signal=15000:nTrain_Background=15000:nTest_Signal=5000:nTest_Background=5000:SplitMode=Random:NormMode=NumEvents:!V" );
 
    // ---- Book MVA methods
    //
    // Cut optimisation
    if (Use["Cuts"])
       factory->BookMethod( TMVA::Types::kCuts, "Cuts",
-                           "!H:!V:FitMethod=MC:EffSel:SampleSize=200000:VarProp=FSmart" );
+                           "!H:!V:FitMethod=MC:EffSel:SampleSize=10000000:VarProp=FSmart" );
 
    if (Use["CutsD"])
       factory->BookMethod( TMVA::Types::kCuts, "CutsD",
-                           "!H:!V:FitMethod=MC:EffSel:SampleSize=200000:VarProp=FSmart:VarTransform=Decorrelate" );
+                           "!H:!V:FitMethod=MC:EffSel:SampleSize=1000000:VarProp=FSmart:VarTransform=Decorrelate" );
 
    if (Use["CutsPCA"])
       factory->BookMethod( TMVA::Types::kCuts, "CutsPCA",
@@ -299,7 +306,7 @@ void IBD_Classification( TString myMethodList = "" )
    // Multi-dimensional likelihood estimator using self-adapting phase-space binning
    if (Use["PDEFoam"])
       factory->BookMethod( TMVA::Types::kPDEFoam, "PDEFoam",
-                           "!H:!V:SigBgSeparate=F:TailCut=0.001:VolFrac=0.0666:nActiveCells=500:nSampl=2000:nBin=5:Nmin=100:Kernel=None:Compress=T" );
+                           "!H:!V:SigBgSeparate=F:TailCut=0.001:VolFrac=0.25:nActiveCells=200:nSampl=1000:nBin=5:Nmin=40:Kernel=None:Compress=T" );
 
    if (Use["PDEFoamBoost"])
       factory->BookMethod( TMVA::Types::kPDEFoam, "PDEFoamBoost",

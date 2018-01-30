@@ -20,16 +20,16 @@ from sys import argv
 from decimal import *
 
 basepath = os.path.dirname(__file__)
-UTHDIR = os.path.abspath(os.path.join(basepath, "..", "..", "data", "UTh"))
-FVDIR = os.path.abspath(os.path.join(basepath, "..", "..", "data", "UTh", "FV"))
+UTHDIR = os.path.abspath(os.path.join(basepath, "..", "..","data", "16m_size", "UTh"))
+FVDIR = os.path.abspath(os.path.join(basepath, "..", "..","data", "16m_size", "UTh", "FV"))
 
 #Name of file that will be output
-fileN = 'Accidentals_lowbkgPMTs_10m_xev.root'
+fileN = 'Accidental_lowbkgPMTs_16msize_150us.root'
 
 #These are all the isotopes available in the UTh and FV directories
 U_isos = ["234Pa","214Pb","214Bi","210Tl","210Bi"]
 Th_isos = ["228Ac","212Pb","212Bi","208Tl"]
-FV_isos = ["210Bi","210Tl","214Bi","214Pb","222Rn"]
+FV_isos = ["210Bi","210Tl","214Bi","214Pb"] #,"222Rn"], no Rn for 19m size
 
 U_files = []
 Th_files = []
@@ -50,15 +50,15 @@ scaler = 1.0
 #scaler = 0.1
 
 #Parameters used to define loaded values in ntuple
-FV_radius = 10.82/2.  #in m
-FV_height = 10.82  #in m
+FV_radius = 10.84/2.  #in m
+FV_height = 10.84  #in m
 
 
 ACC_RATE = (U_rate + Th_rate + FV_rate)
-ACC_RATE_TD = ACC_RATE / (1000./scaler) #In 1/10 of a milliseconds
+ACC_RATE_TD = ACC_RATE / (1000./scaler) #In scaler=1 -> milliseconds
 print("RAW RATE: " + str(ACC_RATE)) 
 
-TIMETHRESH = 1.0E6  #Time window, in nanoseconds, where IBD pairs are searched
+TIMETHRESH = 1.5E5  #Time window, in nanoseconds, where IBD pairs are searched
 
 def shootTimeDiff(raw_freq):
     #Assume your process is poisson with an occurence of raw_freq/msec
@@ -129,8 +129,6 @@ def loadNewEvent(bufffile, entries, timediffs):
     Also updates the entry number for the entry arrays above by 1 each time
     the filename is shot.
     '''
-    #FIXME: change things to all work like the FV_rate shot. Also need to
-    #Get rid of Buffer_isotopes, and Buffer_types
     shot =np.random.rand()
     if shot < (FV_rate / ACC_RATE):
         #Stuff for FV file
@@ -163,7 +161,7 @@ def deleteOld(bufffiles, entries, timediffs):
     '''
     below_threshold = False
     while not below_threshold:
-        totaltime = sum(timediffs)
+        totaltime = sum(timediffs[1:len(timediffs)])
         if totaltime <= TIMETHRESH:
             below_threshold = True
             continue
@@ -189,7 +187,6 @@ if __name__ == '__main__':
     n9_sf        = np.zeros(1,dtype=float64)
     nhit_sf      = np.zeros(1,dtype=float64)
     pe_sf     = np.zeros(1,dtype=float64)
-    detected_ev_sf       	= np.zeros(1,dtype=float64)
     event_number_sf        = np.zeros(1,dtype=float64)
     mc_prim_energy_sf = np.zeros(1,dtype=float64)
     FV_sf = np.zeros(1, dtype=float64)
@@ -206,7 +203,6 @@ if __name__ == '__main__':
     n9_prev_sf        = np.zeros(1,dtype=float64)
     nhit_prev_sf      = np.zeros(1,dtype=float64)
     pe_prev_sf     = np.zeros(1,dtype=float64)
-    detected_ev_prev_sf       	= np.zeros(1,dtype=float64)
     event_number_prev_sf        = np.zeros(1,dtype=float64)
     mc_prim_energy_prev_sf = np.zeros(1,dtype=float64)
     FV_prev_sf = np.zeros(1, dtype=float64)
@@ -226,7 +222,6 @@ if __name__ == '__main__':
     n9_rf        = np.zeros(1,dtype=float64)
     nhit_rf      = np.zeros(1,dtype=float64)
     pe_rf     = np.zeros(1,dtype=float64)
-    detected_ev_rf       	= np.zeros(1,dtype=float64)
     event_number_rf        = np.zeros(1,dtype=float64)
     mc_prim_energy_rf = np.zeros(1,dtype=float64)
     FV_rf = np.zeros(1, dtype=int)
@@ -246,7 +241,6 @@ if __name__ == '__main__':
     n9_prev_rf        = np.zeros(1,dtype=float64)
     nhit_prev_rf      = np.zeros(1,dtype=float64)
     pe_prev_rf     = np.zeros(1,dtype=float64)
-    detected_ev_prev_rf       	= np.zeros(1,dtype=float64)
     mc_prim_energy_prev_rf = np.zeros(1,dtype=float64)
     FV_prev_rf   = np.zeros(1,dtype=int)
     pos_goodness_prev_rf   = np.zeros(1,dtype=float64)
@@ -271,7 +265,6 @@ if __name__ == '__main__':
     t_root.Branch('nhit',       nhit_rf,    'nhit/D')
     t_root.Branch('n9',      n9_rf,   'n9/D')
     
-    t_root.Branch('detected_ev',      detected_ev_rf,       'detected_ev/I')
     t_root.Branch('event_number',        event_number_rf,     'event_number/D')
     t_root.Branch('mc_prim_energy',        mc_prim_energy_rf ,      'mc_prim_energy/D')
     t_root.Branch('FV',        FV_rf ,      'FV/I')
@@ -292,7 +285,6 @@ if __name__ == '__main__':
     t_root.Branch('nhit_prev',       nhit_prev_rf,    'nhit_prev/D')
     t_root.Branch('n9_prev',      n9_prev_rf,   'n9_prev/D')
     
-    t_root.Branch('detected_ev_prev',      detected_ev_prev_rf,       'detected_ev_prev/I')
     t_root.Branch('mc_prim_energy_prev',        mc_prim_energy_prev_rf ,      'mc_prim_energy_prev/D')
     t_root.Branch('FV_prev',        FV_prev_rf ,      'FV_prev/I')
     t_root.Branch('pos_goodness_prev',        pos_goodness_prev_rf ,      'pos_goodness_prev/D')
@@ -315,7 +307,9 @@ if __name__ == '__main__':
     #The following continues as long as the selected file still has entrys left
     FileDepleted = False
     entrynum = 0
-    while (not FileDepleted) and (entrynum < 10000000):
+    while (not FileDepleted) and (entrynum < 100000000):
+        if float(entrynum) / 20000.0 == int(entrynum / 20000.0):
+            print("ENTRYNUM " + str(entrynum))
         Buffer_files, Buffer_entries, Buffer_timediffs = \
                 loadNewEvent(Buffer_files, 
                 Buffer_entries, Buffer_timediffs)
@@ -337,7 +331,6 @@ if __name__ == '__main__':
             deltree.SetBranchAddress('nhit',       nhit_sf)
             deltree.SetBranchAddress('n9',      n9_sf)
             
-            deltree.SetBranchAddress('detected_ev',      detected_ev_sf)
             deltree.SetBranchAddress('event_number',        event_number_sf)
             deltree.SetBranchAddress('mc_prim_energy',        mc_prim_energy_sf)
             deltree.SetBranchAddress('FV',        FV_sf)
@@ -354,17 +347,20 @@ if __name__ == '__main__':
                 FileDepleted = True
                 break
             deltree.GetEntry(Buffer_entries[delfile_index])
-            if pe_sf[0] < 0 or abs(pe_sf[0]) > 1.E6:
-                continue
+            #Some bad reconstruction checks; don't want a ton of crazy nums,
+            #just -1
             if nhit_sf[0] < 0 or nhit_sf[0] > 4000:
                 continue
+            if pe_sf[0] < 0 or abs(pe_sf[0]) > 1.E6:
+                pe_rf[0] = -1.0
+            else:
+                pe_rf[0] = pe_sf[0] 
             if n9_sf[0] < 0 or n9_sf[0] > 4000:
-                continue
-            pe_rf[0] = pe_sf[0] 
+                n9_rf[0] = -1.0
+            else:
+                n9_rf[0] = n9_sf[0]  #nextevent.n9
+
             nhit_rf[0] = nhit_sf[0] #nextevent.nhit
-            n9_rf[0] = n9_sf[0]  #nextevent.n9
-            detected_ev_rf[0] = detected_ev_sf[0] #nextevent.detected_ev
-            event_number_rf[0] = entrynum
             mc_prim_energy_rf[0] = mc_prim_energy_sf[0] #nextevent.mc_prim_energy
             FV_rf[0] = FV_sf[0]  #nextevent.pos_goodness
             pos_goodness_rf[0] = pos_goodness_sf[0]  #nextevent.pos_goodness
@@ -383,7 +379,6 @@ if __name__ == '__main__':
             prompttree.SetBranchAddress('nhit',       nhit_prev_sf)
             prompttree.SetBranchAddress('n9',      n9_prev_sf)
             
-            prompttree.SetBranchAddress('detected_ev',      detected_ev_prev_sf)
             prompttree.SetBranchAddress('event_number',        event_number_prev_sf)
             prompttree.SetBranchAddress('mc_prim_energy',        mc_prim_energy_prev_sf)
             prompttree.SetBranchAddress('FV',        FV_prev_sf)
@@ -401,16 +396,18 @@ if __name__ == '__main__':
                 break
            #Now, fill in the next tree entry with this entrys info as previous
             prompttree.GetEntry(Buffer_entries[i])
-            if pe_prev_sf[0] < 0 or abs(pe_prev_sf[0]) > 1.E6:
-                continue
             if nhit_prev_sf[0] < 0 or nhit_prev_sf[0] > 4000:
                 continue
+            if pe_prev_sf[0] < 0 or abs(pe_prev_sf[0]) > 1.E6:
+                pe_prev_rf[0] = -1.0
+            else:
+                pe_prev_rf[0] = pe_prev_sf[0] 
             if n9_prev_sf[0] < 0 or n9_prev_sf[0] > 4000:
-                continue
-            pe_prev_rf[0] = pe_prev_sf[0] #nextevent.pe
+                n9_prev_rf[0] = -1.0
+            else:
+                n9_prev_rf[0] = n9_prev_sf[0]  #nextevent.n9
+
             nhit_prev_rf[0] = nhit_prev_sf[0] #nextevent.nhit
-            n9_prev_rf[0] = n9_prev_sf[0]  #nextevent.n9
-            detected_ev_prev_rf[0] = detected_ev_prev_sf[0] #nextevent.detected_ev
             mc_prim_energy_prev_rf[0] = mc_prim_energy_prev_sf[0] #nextevent.mc_prim_energy
             FV_prev_rf[0] = FV_prev_sf[0]
             pos_goodness_prev_rf[0] = pos_goodness_prev_sf[0]  #nextevent.pos_goodness
@@ -422,11 +419,12 @@ if __name__ == '__main__':
             true_z_prev_rf[0] = true_z_prev_sf[0]  #nextevent.true_z
             dir_goodness_prev_rf[0] = dir_goodness_prev_sf[0] #nextevent.dir_goodness
             #dirReco_prev_rf = dirReco_prev_sf #cp.deepcopy(dirReco_prev_sf)
-            interevent_time_rf[0] = sum(Buffer_timediffs[i:delfile_index])
+            interevent_time_rf[0] = sum(Buffer_timediffs[i+1:delfile_index+1])
             interevent_dist_fv_rf[0] = innerDist(reco_r_prev_rf[0],
                         reco_z_prev_rf[0], reco_r_rf[0], reco_z_rf[0],
                         posReco_rf, posReco_prev_rf)
 
+            event_number_rf[0] = entrynum
             t_root.Fill()
             entrynum+=1
     f_root.cd()

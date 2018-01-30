@@ -162,7 +162,6 @@ if __name__ == '__main__':
     n9_sf        = np.zeros(1,dtype=float64)
     nhit_sf      = np.zeros(1,dtype=float64)
     pe_sf     = np.zeros(1,dtype=float64)
-    detected_ev_sf       	= np.zeros(1,dtype=float64)
     event_number_sf        = np.zeros(1,dtype=float64)
     mc_prim_energy_sf = np.zeros(1,dtype=float64)
     FV_sf = np.zeros(1, dtype=float64)
@@ -183,7 +182,6 @@ if __name__ == '__main__':
     n9_rf        = np.zeros(1,dtype=float64)
     nhit_rf      = np.zeros(1,dtype=float64)
     pe_rf     = np.zeros(1,dtype=float64)
-    detected_ev_rf       	= np.zeros(1,dtype=float64)
     event_number_rf        = np.zeros(1,dtype=float64)
     mc_prim_energy_rf = np.zeros(1,dtype=float64)
     FV_rf = np.zeros(1, dtype=int)
@@ -203,7 +201,6 @@ if __name__ == '__main__':
     n9_prev_rf        = np.zeros(1,dtype=float64)
     nhit_prev_rf      = np.zeros(1,dtype=float64)
     pe_prev_rf     = np.zeros(1,dtype=float64)
-    detected_ev_prev_rf       	= np.zeros(1,dtype=float64)
     mc_prim_energy_prev_rf = np.zeros(1,dtype=float64)
     FV_prev_rf   = np.zeros(1,dtype=int)
     pos_goodness_prev_rf   = np.zeros(1,dtype=float64)
@@ -228,7 +225,6 @@ if __name__ == '__main__':
     t_root.Branch('nhit',       nhit_rf,    'nhit/D')
     t_root.Branch('n9',      n9_rf,   'n9/D')
     
-    t_root.Branch('detected_ev',      detected_ev_rf,       'detected_ev/I')
     t_root.Branch('event_number',        event_number_rf,     'event_number/D')
     t_root.Branch('mc_prim_energy',        mc_prim_energy_rf ,      'mc_prim_energy/D')
     t_root.Branch('FV',        FV_rf ,      'FV/I')
@@ -249,7 +245,6 @@ if __name__ == '__main__':
     t_root.Branch('nhit_prev',       nhit_prev_rf,    'nhit_prev/D')
     t_root.Branch('n9_prev',      n9_prev_rf,   'n9_prev/D')
     
-    t_root.Branch('detected_ev_prev',      detected_ev_prev_rf,       'detected_ev_prev/I')
     t_root.Branch('mc_prim_energy_prev',        mc_prim_energy_prev_rf ,      'mc_prim_energy_prev/D')
     t_root.Branch('FV_prev',        FV_prev_rf ,      'FV_prev/I')
     t_root.Branch('pos_goodness_prev',        pos_goodness_prev_rf ,      'pos_goodness_prev/D')
@@ -275,7 +270,6 @@ if __name__ == '__main__':
         dattree.SetBranchAddress('nhit',       nhit_sf)
         dattree.SetBranchAddress('n9',      n9_sf)
         
-        dattree.SetBranchAddress('detected_ev',      detected_ev_sf)
         dattree.SetBranchAddress('event_number',        event_number_sf)
         dattree.SetBranchAddress('mc_prim_energy',        mc_prim_energy_sf)
         dattree.SetBranchAddress('FV',        FV_sf)
@@ -292,17 +286,21 @@ if __name__ == '__main__':
             FileDepleted = True
             break
         dattree.GetEntry(evindex)
-        if pe_sf[0] < 0 or abs(pe_sf[0]) > 1.E6:
-            continue
+        #Some bad reconstruction checks; don't want a ton of crazy nums,
+        #just -1
         if nhit_sf[0] < 0 or nhit_sf[0] > 4000:
             continue
+        if pe_sf[0] < 0 or abs(pe_sf[0]) > 1.E6:
+            pe_rf[0] = -1.0
+        else:
+            pe_rf[0] = pe_sf[0] 
         if n9_sf[0] < 0 or n9_sf[0] > 4000:
-            continue
+            n9_rf[0] = -1.0
+        else:
+            n9_rf[0] = n9_sf[0]  #nextevent.n9
+
         entrynum += 1
-        pe_rf[0] = pe_sf[0] 
         nhit_rf[0] = nhit_sf[0] #nextevent.nhit
-        n9_rf[0] = n9_sf[0]  #nextevent.n9
-        detected_ev_rf[0] = detected_ev_sf[0] #nextevent.detected_ev
         event_number_rf[0] = entrynum
         mc_prim_energy_rf[0] = mc_prim_energy_sf[0] #nextevent.mc_prim_energy
         FV_rf[0] = FV_sf[0]  #nextevent.pos_goodness
@@ -331,7 +329,6 @@ if __name__ == '__main__':
         pe_prev_rf[0] = pe_sf[0] #nextevent.pe
         nhit_prev_rf[0] = nhit_sf[0] #nextevent.nhit
         n9_prev_rf[0] = n9_sf[0]  #nextevent.n9
-        detected_ev_prev_rf[0] = detected_ev_sf[0] #nextevent.detected_ev
         mc_prim_energy_prev_rf[0] = mc_prim_energy_sf[0] #nextevent.mc_prim_energy
         FV_prev_rf[0] = FV_sf[0]
         pos_goodness_prev_rf[0] = pos_goodness_sf[0]  #nextevent.pos_goodness
