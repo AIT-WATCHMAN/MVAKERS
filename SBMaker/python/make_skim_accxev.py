@@ -20,138 +20,53 @@ from sys import argv
 from decimal import *
 
 basepath = os.path.dirname(__file__)
-UTHDIR = os.path.abspath(os.path.join(basepath, "..", "..","data", "16m_size", "UTh"))
-FVDIR = os.path.abspath(os.path.join(basepath, "..", "..","data", "16m_size", "UTh", "FV"))
+MAINDIR = "pass2_root_files_tankRadius_10000.000000_halfHeight_10000.000000_shieldThickness_1500.000000_U238_PPM_0.341000_Th232_PPM_1.330000_Rn222_0.001400"
+ANALYZEDIR = os.path.abspath(os.path.join(basepath, "..", "..","data", MAINDIR, "25pct"))
 
 #Name of file that will be output
-fileN = 'Accidental_lowbkgPMTs_16msize_150us.root'
+fileN = 'tester.root'
 
 #These are all the isotopes available in the UTh and FV directories
-U_isos = ["234Pa","214Pb","214Bi","210Tl","210Bi"]
-Th_isos = ["228Ac","212Pb","212Bi","208Tl"]
-FV_isos = ["210Bi","210Tl","214Bi","214Pb"] #,"222Rn"], no Rn for 19m size
+Bkg_types = ["WV", "PMT"]  #watchmakers output has these in accidental names
+Bkg_filelocs = []
+Bkg_files = []
+for bkgtype in Bkg_types:
+    Bkg_filelocs = Bkg_filelocs + glob.glob(ANALYZEDIR + "/" + bkgtype)
+for loc in Bkg_filelocs:
+    rfile = ROOT.TFile(loc, "read")
+    Bkg_files.append(rfile)
+   
 
-U_files = []
-Th_files = []
-FV_files = []
-
-U_entry = np.zeros(len(U_isos))
-Th_entry = np.zeros(len(Th_isos))
-FV_entry = np.zeros(len(FV_isos))
-
-#The below assume secular equilibrium with U238 for all isotopes
-U_rate = 2598.0 * float(len(U_isos))    #in Hz, assumes 0.43 PPM U in 3500 PMTs
-                                        #PMT mass 1.4 kg
-Th_rate = 2645.0* float(len(Th_isos))   #in Hz, same assumptions as U
-FV_rate = 5.6   * float(len(FV_isos))   #in Hz, given by Marc Bergevin
-scaler = 1.0
-#U_rate = 20685.0 * float(len(U_isos))
-#Th_rate = 26445.0 * float(len(Th_isos))
-#scaler = 0.1
+#FIXME: have to program this function to read from runSummary trees
+#See ./lib/root_reader.py for notes on how to do dis
+Bkg_rates = rr.GetRates_Valids(Bkg_files)
+Bkg_entrynums = np.zeros(len(Bkg_files))
 
 #Parameters used to define loaded values in ntuple
 FV_radius = 10.84/2.  #in m
 FV_height = 10.84  #in m
-
-
-ACC_RATE = (U_rate + Th_rate + FV_rate)
-ACC_RATE_TD = ACC_RATE / (1000./scaler) #In scaler=1 -> milliseconds
-print("RAW RATE: " + str(ACC_RATE)) 
-
 TIMETHRESH = 1.5E5  #Time window, in nanoseconds, where IBD pairs are searched
 
-def shootTimeDiff(raw_freq):
-    #Assume your process is poisson with an occurence of raw_freq/msec
-    #on average.  We get the time diff by shooting that many events in
-    #a one second timespan, sort, then get the average time difference.
-    #Returns event time difference in nanoseconds
-    fired_event = False
-    timediff = 0.
-    while not fired_event:
-        if raw_freq < 20:
-            num_events = pd.RandShoot_p(raw_freq,1)
-        else:
-            num_events = pd.RandShoot_g0(raw_freq, np.sqrt(raw_freq),1)
-        event_times = np.random.rand(num_events)
-        event_times.sort()
-        if len(event_times) > 2:
-            the_event_index = np.random.randint(1,len(event_times)-1)
-            timediff += (event_times[the_event_index] - event_times[the_event_index -1])
-            fired_event = True
-        elif len(event_times) >0:
-            timediff += 1. - event_times[0]
-            fire_event = True
-        else:
-            timediff+=1
-    return timediff * 1.0E6 * scaler
+ACC_RATE = np.sum(Bkg_rates)
+print("RAW RATE: " + str(ACC_RATE)) 
 
-def innerDistFV(FV, FV_prev, posReco, posReco_prev):
-    #First checks that the current and previous event reconstruct in the
-    #FV.  If they do, returns the inner_dist_fv
-    if FV==1 and FV_prev==1:
-        return np.sqrt((posReco_prev.x() - posReco.x())**2 + 
-                (posReco_prev.y() - posReco.y())**2 + 
-                (posReco_prev.z() - posReco.z())**2)
-    else:
-        return -1
-
-def innerDist(prev_r, prev_z, r, z, posReco, posReco_prev):
-    #First checks that the current and previous event reconstruct in the
-    #FV.  If they do, returns the inner_dist_fv
-    if (0< abs(prev_r) < FV_radius) and (0 < abs(r) < FV_radius):
-        if (0 < abs(prev_z) < (FV_height/2.)) and (0 < abs(z) < (FV_height / 2.)):
-            return np.sqrt((posReco_prev.x() - posReco.x())**2 + 
-                    (posReco_prev.y() - posReco.y())**2 + 
-                    (posReco_prev.z() - posReco.z())**2)
-        else:
-            return -1
-    else:
-        return -1
-
-def loadBkgFiles():
-    for iso in U_isos:
-        filename = glob.glob(UTHDIR + "/*" + iso +"*")[0]
-        rfile = ROOT.TFile(filename, "read")
-        U_files.append(rfile)
-    for iso in Th_isos:
-        filename = glob.glob(UTHDIR + "/*" + iso +"*")[0]
-        rfile = ROOT.TFile(filename, "read")
-        Th_files.append(rfile)
-    for iso in FV_isos:
-        filename = glob.glob(FVDIR + "/*" + iso +"*")[0]
-        rfile = ROOT.TFile(filename, "read")
-        FV_files.append(rfile)
-    print("UFILES: " + str(U_files))
+#FIXME: Let's do time-to-next event like watchmakers. FIND IT
 
 def loadNewEvent(bufffile, entries, timediffs):
     '''
-    Using the defined constants above, random shoot a ROOT file to be opened.
-    Also updates the entry number for the entry arrays above by 1 each time
-    the filename is shot.
+    Using the loaded-in background files, shoot the next event's information,
+    including file it's in, it's entry number, and the time since last event
     '''
     shot =np.random.rand()
-    if shot < (FV_rate / ACC_RATE):
-        #Stuff for FV file
-        index = int(np.random.rand() * len(FV_isos))
-        FV_entry[index]+=1
-        rfile = FV_files[index]
-        bufffile.append(rfile)
-        entries.append(int(FV_entry[index]))
-    elif shot < ((Th_rate + FV_rate)/ACC_RATE):
-        #Stuff for Th file
-        index = int(np.random.rand() * len(Th_isos))
-        Th_entry[index]+=1
-        rfile = Th_files[index]
-        bufffile.append(rfile)
-        entries.append(int(Th_entry[index]))
-    else:
-        #Stuff for U file
-        index = int(np.random.rand() * len(U_isos))
-        U_entry[index]+=1
-        rfile = U_files[index]
-        bufffile.append(rfile)
-        entries.append(int(U_entry[index]))
-    timediffs.append(shootTimeDiff(ACC_RATE_TD))
+    #Assuming Bkg_rates is a numpy array
+    for i in xrange(len(Bkg_rates)):
+        if i > 0:
+            if shot < (Bkg_rates[0:i] / Bkg_rates[0:len(Bkg_rates)]):
+            Bkg_entrynums[i]+=1
+            entries.append(int(Bkg_entrynums[i]))
+            bufffile.append(Bkg_files[i])
+    #FIXME: Need to write timetonextevent function
+    timediffs.append(timetonextevent(ACC_RATE))
     return bufffile, entries, timediffs
 
 def deleteOld(bufffiles, entries, timediffs):
@@ -188,73 +103,62 @@ if __name__ == '__main__':
     nhit_sf      = np.zeros(1,dtype=float64)
     pe_sf     = np.zeros(1,dtype=float64)
     event_number_sf        = np.zeros(1,dtype=float64)
-    mc_prim_energy_sf = np.zeros(1,dtype=float64)
-    FV_sf = np.zeros(1, dtype=float64)
-    pos_goodness_sf   = np.zeros(1,dtype=float64)
-    posReco_sf = ROOT.TVector3()
-    reco_r_sf   = np.zeros(1,dtype=float64)
+    good_pos_sf   = np.zeros(1,dtype=float64)
+    u_sf   = np.zeros(1,dtype=float64)
+    v_sf   = np.zeros(1,dtype=float64)
+    w_sf   = np.zeros(1,dtype=float64)
+    x_sf   = np.zeros(1,dtype=float64)
+    y_sf   = np.zeros(1,dtype=float64)
+    z_sf   = np.zeros(1,dtype=float64)
     reco_z_sf = np.zeros(1,dtype=float64)
-    #posTruth_sf   = ROOT.TVector3()
-    true_r_sf     = np.zeros(1,dtype=float64)
-    true_z_sf     = np.zeros(1,dtype=float64)
-    dir_goodness_sf     = np.zeros(1,dtype=float64)
-    #dirReco_sf     = ROOT.TVector3()
- 
+    good_dir_sf     = np.zeros(1,dtype=float64)
+
     n9_prev_sf        = np.zeros(1,dtype=float64)
     nhit_prev_sf      = np.zeros(1,dtype=float64)
     pe_prev_sf     = np.zeros(1,dtype=float64)
     event_number_prev_sf        = np.zeros(1,dtype=float64)
-    mc_prim_energy_prev_sf = np.zeros(1,dtype=float64)
-    FV_prev_sf = np.zeros(1, dtype=float64)
-    pos_goodness_prev_sf   = np.zeros(1,dtype=float64)
-    posReco_prev_sf = ROOT.TVector3()
-    reco_r_prev_sf   = np.zeros(1,dtype=float64)
+    good_pos_prev_sf   = np.zeros(1,dtype=float64)
+    u_prev_sf   = np.zeros(1,dtype=float64)
+    v_prev_sf   = np.zeros(1,dtype=float64)
+    w_prev_sf   = np.zeros(1,dtype=float64)
+    x_prev_sf   = np.zeros(1,dtype=float64)
+    y_prev_sf   = np.zeros(1,dtype=float64)
+    z_prev_sf   = np.zeros(1,dtype=float64)
     reco_z_prev_sf = np.zeros(1,dtype=float64)
-    #posTruth_prev_sf   = ROOT.TVector3()
-    true_r_prev_sf     = np.zeros(1,dtype=float64)
-    true_z_prev_sf     = np.zeros(1,dtype=float64)
-    dir_goodness_prev_sf     = np.zeros(1,dtype=float64)
-    #dirReco_prev_sf     = ROOT.TVector3()
-
-    '''VARIABLES ASSOCIATED WITH SKIM FILE'''
+    good_dir_prev_sf     = np.zeros(1,dtype=float64)
+ 
+        '''VARIABLES ASSOCIATED WITH SKIM FILE'''
 
     '''Set up variables for root tree'''
     n9_rf        = np.zeros(1,dtype=float64)
     nhit_rf      = np.zeros(1,dtype=float64)
     pe_rf     = np.zeros(1,dtype=float64)
     event_number_rf        = np.zeros(1,dtype=float64)
-    mc_prim_energy_rf = np.zeros(1,dtype=float64)
-    FV_rf = np.zeros(1, dtype=int)
-    pos_goodness_rf   = np.zeros(1,dtype=float64)
-    posReco_rf = ROOT.TVector3()
-    reco_r_rf   = np.zeros(1,dtype=float64)
+    good_pos_rf   = np.zeros(1,dtype=float64)
+    u_rf   = np.zeros(1,dtype=float64)
+    v_rf   = np.zeros(1,dtype=float64)
+    w_rf   = np.zeros(1,dtype=float64)
+    x_rf   = np.zeros(1,dtype=float64)
+    y_rf   = np.zeros(1,dtype=float64)
+    z_rf   = np.zeros(1,dtype=float64)
     reco_z_rf = np.zeros(1,dtype=float64)
-    #posTruth_rf   = ROOT.TVector3()
-    true_r_rf     = np.zeros(1,dtype=float64)
-    true_z_rf     = np.zeros(1,dtype=float64)
-    dir_goodness_rf     = np.zeros(1,dtype=float64)
-    #dirReco_rf     = ROOT.TVector3()
-
-    interevent_time_rf     = np.zeros(1,dtype=float64)
-    interevent_dist_fv_rf     = np.zeros(1,dtype=float64)
+    good_dir_rf     = np.zeros(1,dtype=float64)
 
     n9_prev_rf        = np.zeros(1,dtype=float64)
     nhit_prev_rf      = np.zeros(1,dtype=float64)
     pe_prev_rf     = np.zeros(1,dtype=float64)
-    mc_prim_energy_prev_rf = np.zeros(1,dtype=float64)
-    FV_prev_rf   = np.zeros(1,dtype=int)
-    pos_goodness_prev_rf   = np.zeros(1,dtype=float64)
-    posReco_prev_rf = ROOT.TVector3() 
-    reco_r_prev_rf   = np.zeros(1,dtype=float64)
+    event_number_prev_rf        = np.zeros(1,dtype=float64)
+    good_pos_prev_rf   = np.zeros(1,dtype=float64)
+    u_prev_rf   = np.zeros(1,dtype=float64)
+    v_prev_rf   = np.zeros(1,dtype=float64)
+    w_prev_rf   = np.zeros(1,dtype=float64)
+    x_prev_rf   = np.zeros(1,dtype=float64)
+    y_prev_rf   = np.zeros(1,dtype=float64)
+    z_prev_rf   = np.zeros(1,dtype=float64)
     reco_z_prev_rf = np.zeros(1,dtype=float64)
-    posTruth_prev_rf   = ROOT.TVector3()
-    true_r_prev_rf     = np.zeros(1,dtype=float64)
-    true_z_prev_rf     = np.zeros(1,dtype=float64)
-    dir_goodness_prev_rf     = np.zeros(1,dtype=float64)
-    dirReco_prev_rf     = ROOT.TVector3()
-      
+    good_dir_prev_rf     = np.zeros(1,dtype=float64)
+ 
     '''Open a root file with name of dataType'''
-
 
     f_root = ROOT.TFile(fileN,"recreate")
     
@@ -266,17 +170,14 @@ if __name__ == '__main__':
     t_root.Branch('n9',      n9_rf,   'n9/D')
     
     t_root.Branch('event_number',        event_number_rf,     'event_number/D')
-    t_root.Branch('mc_prim_energy',        mc_prim_energy_rf ,      'mc_prim_energy/D')
-    t_root.Branch('FV',        FV_rf ,      'FV/I')
-    t_root.Branch('pos_goodness',        pos_goodness_rf ,      'pos_goodness/D')
-    t_root.Branch('posReco',  posReco_rf, 'posReco')
-    t_root.Branch('reco_r',     reco_r_rf,'reco_r/D')
-    t_root.Branch('reco_z',     reco_z_rf,'reco_z/D')
-    #t_root.Branch('posTruth','TVector3',     posTruth_rf)
-    t_root.Branch('true_r', true_r_rf,  'true_r/D')
-    t_root.Branch('true_z', true_z_rf,  'true_z/D')
-    t_root.Branch('dir_goodness', dir_goodness_rf, 'dir_goodness/D')
-    #t_root.Branch('dirReco','TVector3', dirReco_rf)
+    t_root.Branch('good_pos',        good_pos_rf ,      'good_pos/D')
+    t_root.Branch('u',     u_rf,'u/D')
+    t_root.Branch('v',     v_rf,'v/D')
+    t_root.Branch('w',     w_rf,'w/D')
+    t_root.Branch('x',     x_rf,'x/D')
+    t_root.Branch('y',     y_rf,'y/D')
+    t_root.Branch('z',     z_rf,'z/D')
+    t_root.Branch('good_dir', good_dir_rf, 'good_dir/D')
 
     t_root.Branch('interevent_time', interevent_time_rf,  'interevent_time/D')
     t_root.Branch('interevent_dist_fv', interevent_dist_fv_rf,  'interevent_dist_fv/D')
@@ -285,17 +186,15 @@ if __name__ == '__main__':
     t_root.Branch('nhit_prev',       nhit_prev_rf,    'nhit_prev/D')
     t_root.Branch('n9_prev',      n9_prev_rf,   'n9_prev/D')
     
-    t_root.Branch('mc_prim_energy_prev',        mc_prim_energy_prev_rf ,      'mc_prim_energy_prev/D')
-    t_root.Branch('FV_prev',        FV_prev_rf ,      'FV_prev/I')
-    t_root.Branch('pos_goodness_prev',        pos_goodness_prev_rf ,      'pos_goodness_prev/D')
-    t_root.Branch('posReco_prev',     posReco_prev_rf, 'posReco_prev')
-    t_root.Branch('reco_r_prev',     reco_r_prev_rf,'reco_r_prev/D')
-    t_root.Branch('reco_z_prev',     reco_z_prev_rf,'reco_z_prev/D')
-    #t_root.Branch('posTruth_prev','TVector3',     posTruth_rf)
-    t_root.Branch('true_r_prev', true_r_prev_rf,  'true_r_prev/D')
-    t_root.Branch('true_z_prev', true_z_prev_rf,  'true_z_prev/D')
-    t_root.Branch('dir_goodness_prev', dir_goodness_prev_rf, 'dir_goodness_prev/D')
-    #t_root.Branch('dirReco_prev','TVector3', dirReco_rf)
+    t_root.Branch('event_number_prev',        event_number_prev_rf,     'event_number_prev/D')
+    t_root.Branch('good_pos_prev',        good_pos_prev_rf ,      'good_pos_prev/D')
+    t_root.Branch('u_prev',     u_prev_rf,'u_prev/D')
+    t_root.Branch('v_prev',     v_prev_rf,'v_prev/D')
+    t_root.Branch('w_prev',     w_prev_rf,'w_prev/D')
+    t_root.Branch('x_prev',     x_prev_rf,'x_prev/D')
+    t_root.Branch('y_prev',     y_prev_rf,'y_prev/D')
+    t_root.Branch('z_prev',     z_prev_rf,'z_prev/D')
+    t_root.Branch('good_dir_prev', good_dir_prev_rf, 'good_dir_prev/D')
 
 
     #To properly pair all events with a time separation < TIMETHRESH, we have a
@@ -332,16 +231,14 @@ if __name__ == '__main__':
             deltree.SetBranchAddress('n9',      n9_sf)
             
             deltree.SetBranchAddress('event_number',        event_number_sf)
-            deltree.SetBranchAddress('mc_prim_energy',        mc_prim_energy_sf)
-            deltree.SetBranchAddress('FV',        FV_sf)
-            deltree.SetBranchAddress('pos_goodness',        pos_goodness_sf)
+            deltree.SetBranchAddress('good_pos',        good_pos_sf)
             deltree.SetBranchAddress('posReco',    posReco_sf)
-            deltree.SetBranchAddress('reco_r',     reco_r_sf)
+            deltree.SetBranchAddress('u',     u_sf)
             deltree.SetBranchAddress('reco_z',     reco_z_sf)
             #deltree.SetBranchAddress('posTruth',     posTruth_sf)
             deltree.SetBranchAddress('true_r', true_r_sf)
             deltree.SetBranchAddress('true_z', true_z_sf)
-            deltree.SetBranchAddress('dir_goodness', dir_goodness_sf)
+            deltree.SetBranchAddress('good_dir', good_dir_sf)
             #deltree.SetBranchAddress('dirReco',     dirReco_sf)
             if Buffer_entries[delfile_index] >= deltree.GetEntries():
                 FileDepleted = True
@@ -362,15 +259,15 @@ if __name__ == '__main__':
 
             nhit_rf[0] = nhit_sf[0] #nextevent.nhit
             mc_prim_energy_rf[0] = mc_prim_energy_sf[0] #nextevent.mc_prim_energy
-            FV_rf[0] = FV_sf[0]  #nextevent.pos_goodness
-            pos_goodness_rf[0] = pos_goodness_sf[0]  #nextevent.pos_goodness
+            FV_rf[0] = FV_sf[0]  #nextevent.good_pos
+            good_pos_rf[0] = good_pos_sf[0]  #nextevent.good_pos
             posReco_rf = posReco_sf
-            reco_r_rf[0] = reco_r_sf[0]  #nextevent.reco_r
+            u_rf[0] = u_sf[0]  #nextevent.u
             reco_z_rf[0] = reco_z_sf[0]  #nextevent.reco_z
             #posTruth_rf = posTruth_sf
             true_r_rf[0] = true_r_sf[0]  #nextevent.true_r
             true_z_rf[0] = true_z_sf[0]  #nextevent.true_z
-            dir_goodness_rf[0] = dir_goodness_sf[0] #nextevent.dir_goodness
+            good_dir_rf[0] = good_dir_sf[0] #nextevent.good_dir
             #dirReco_rf = dirReco_sf
     
             promptfile = Buffer_files[i]
@@ -382,14 +279,14 @@ if __name__ == '__main__':
             prompttree.SetBranchAddress('event_number',        event_number_prev_sf)
             prompttree.SetBranchAddress('mc_prim_energy',        mc_prim_energy_prev_sf)
             prompttree.SetBranchAddress('FV',        FV_prev_sf)
-            prompttree.SetBranchAddress('pos_goodness',        pos_goodness_prev_sf)
+            prompttree.SetBranchAddress('good_pos',        good_pos_prev_sf)
             prompttree.SetBranchAddress('posReco',    posReco_prev_sf)
-            prompttree.SetBranchAddress('reco_r',     reco_r_prev_sf)
+            prompttree.SetBranchAddress('u',     u_prev_sf)
             prompttree.SetBranchAddress('reco_z',     reco_z_prev_sf)
             #prompttree.SetBranchAddress('posTruth',     posTruth_prev_sf)
             prompttree.SetBranchAddress('true_r', true_r_prev_sf)
             prompttree.SetBranchAddress('true_z', true_z_prev_sf)
-            prompttree.SetBranchAddress('dir_goodness', dir_goodness_prev_sf)
+            prompttree.SetBranchAddress('good_dir', good_dir_prev_sf)
             #prompttree.SetBranchAddress('dirReco',     dirReco_prev_sf)
             if Buffer_entries[i] >= prompttree.GetEntries():
                 FileDepleted = True
@@ -410,18 +307,18 @@ if __name__ == '__main__':
             nhit_prev_rf[0] = nhit_prev_sf[0] #nextevent.nhit
             mc_prim_energy_prev_rf[0] = mc_prim_energy_prev_sf[0] #nextevent.mc_prim_energy
             FV_prev_rf[0] = FV_prev_sf[0]
-            pos_goodness_prev_rf[0] = pos_goodness_prev_sf[0]  #nextevent.pos_goodness
+            good_pos_prev_rf[0] = good_pos_prev_sf[0]  #nextevent.good_pos
             posReco_prev_rf = cp.deepcopy(posReco_prev_sf) #nextevent.posReco
-            reco_r_prev_rf[0] = reco_r_prev_sf[0]  #nextevent.reco_r
+            u_prev_rf[0] = u_prev_sf[0]  #nextevent.u
             reco_z_prev_rf[0] = reco_z_prev_sf[0]  #nextevent.reco_z
             #posTruth_prev_rf = posTruth_prev_sf #cp.deepcopy(posTruth_prev_sf)
             true_r_prev_rf[0] = true_r_prev_sf[0]  #nextevent.true_r
             true_z_prev_rf[0] = true_z_prev_sf[0]  #nextevent.true_z
-            dir_goodness_prev_rf[0] = dir_goodness_prev_sf[0] #nextevent.dir_goodness
+            good_dir_prev_rf[0] = good_dir_prev_sf[0] #nextevent.good_dir
             #dirReco_prev_rf = dirReco_prev_sf #cp.deepcopy(dirReco_prev_sf)
             interevent_time_rf[0] = sum(Buffer_timediffs[i+1:delfile_index+1])
-            interevent_dist_fv_rf[0] = innerDist(reco_r_prev_rf[0],
-                        reco_z_prev_rf[0], reco_r_rf[0], reco_z_rf[0],
+            interevent_dist_fv_rf[0] = innerDist(u_prev_rf[0],
+                        reco_z_prev_rf[0], u_rf[0], reco_z_rf[0],
                         posReco_rf, posReco_prev_rf)
 
             event_number_rf[0] = entrynum
