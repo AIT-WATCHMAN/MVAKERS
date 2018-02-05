@@ -1,3 +1,5 @@
+import numpy as np
+
 def shootTimeDiff(raw_freq):
     #Assume your process is poisson with an occurence of raw_freq/msec
     #on average.  We get the time diff by shooting that many events in
@@ -24,7 +26,11 @@ def shootTimeDiff(raw_freq):
     return timediff * 1.0E6 * scaler
 
 #FIXME: need a version that takes in x, y, and z, and does this
-def innerDist(prev_r, prev_z, r, z, posReco, posReco_prev):
+
+def innerDist(prev_x, prev_y, prev_z, x, y, z):
+    return np.sqrt((prev_x - x)**2 + (prev_y - y)**2 + (prev_z - z)**2)
+
+def innerDist_rz(prev_r, prev_z, r, z, posReco, posReco_prev):
     #First checks that the current and previous event reconstruct in the
     #FV.  If they do, returns the inner_dist_fv
     if (0< abs(prev_r) < FV_radius) and (0 < abs(r) < FV_radius):
