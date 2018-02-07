@@ -1,6 +1,22 @@
 import numpy as np
+import ROOT as ROOT
+from ROOT import TChain, TFile, gROOT
+from sys import stdout
 
-def shootTimeDiff(raw_freq):
+def isFiducial(FVr, FVz, x1, y1, z1):
+    #Function checks that both events are within the defined fiducial volume.
+    r1 = np.sqrt(x1**2 + y1**2)
+    if (r1 > FVr) or (abs(z1) > FVz):
+        return False
+    else:
+        return True
+
+def shootTimeDiff(rate):
+    #Given an average rate in Hz, shoot from an exponential distribution for the
+    #Time to next event.  Return time in nanoseconds.
+    return np.random.exponential(1./float(rate))*1.0E9
+
+def shootTimeDiff_Slow(raw_freq):
     #Assume your process is poisson with an occurence of raw_freq/msec
     #on average.  We get the time diff by shooting that many events in
     #a one second timespan, sort, then get the average time difference.
