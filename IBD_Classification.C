@@ -177,11 +177,15 @@ void IBD_Classification( TString myMethodList = "" )
    factory->AddVariable( "interevent_time", "interevent time","ns", 'F' );
    factory->AddVariable( "D_ITR := n9/nhit", "delayed in time ratio", "no units", 'F' );
    factory->AddVariable( "P_ITR := n9_prev/nhit_prev", "prompt in-time ratio", "no units", 'F' );
-   factory->AddVariable( "pos_goodness", "delayed position fit goodness", "no units", 'F' );
-   factory->AddVariable( "pos_goodness_prev", "prompt position fit goodness", "no units", 'F' );
-   //factory->AddVariable( "dir_goodness", "delayed direction fit goodness", "no units", 'F' );
+   factory->AddVariable( "good_pos", "delayed position fit goodness", "no units", 'F' );
+   factory->AddVariable( "good_pos_prev", "prompt position fit goodness", "no units", 'F' );
+   factory->AddVariable( "good_dir", "delayed direction fit goodness", "no units", 'F' );
 
-   //factory->AddVariable( "dir_goodness_prev", "prompt direction fit goodness", "no units", 'F' );
+   factory->AddVariable( "good_dir_prev", "prompt direction fit goodness", "no units", 'F' );
+   factory->AddVariable( "z", "Z position of delayed event in detector", "m", 'F' );
+   factory->AddVariable( "z_prev", "Z position of prompt event in detector", "m", 'F' );
+   factory->AddVariable( "r", "Radial position of delayed event in detector", "m", 'F' );
+   factory->AddVariable( "r_prev", "Radial position of prompt event in detector", "m", 'F' );
    factory->AddVariable( "pe", "delayed P.E. count", "PE", 'F' );
    factory->AddVariable( "pe_prev", "prompt P.E. count", "PE", 'F' );
 
