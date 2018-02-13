@@ -105,10 +105,15 @@ int main(int argc, char** argv)
     Double_t pe, pe_prev; 
     Double_t n9, n9_prev;
     Double_t nhit, nhit_prev;
-    Double_t pos_goodness, pos_goodness_prev;
-    Double_t dir_goodness, dir_goodness_prev;
-    Double_t reco_r, reco_r_prev;
-    Double_t reco_z, reco_z_prev;
+    Double_t good_pos, good_pos_prev;
+    Double_t good_dir, good_dir_prev;
+    Double_t u, u_prev;
+    Double_t v, v_prev;
+    Double_t w, w_prev;
+    Double_t x, x_prev;
+    Double_t y, y_prev;
+    Double_t r, r_prev;
+    Double_t z, z_prev;
 
     T->SetBranchAddress("interevent_dist_fv",&interevent_dist_fv);
     T->SetBranchAddress("interevent_time",&interevent_time);
@@ -118,14 +123,24 @@ int main(int argc, char** argv)
     T->SetBranchAddress("n9_prev",&n9_prev);
     T->SetBranchAddress("nhit",&nhit);
     T->SetBranchAddress("nhit_prev",&nhit_prev);
-    T->SetBranchAddress("reco_r",&reco_r);
-    T->SetBranchAddress("reco_r_prev",&reco_r_prev);
-    T->SetBranchAddress("reco_z",&reco_z);
-    T->SetBranchAddress("reco_z_prev",&reco_z_prev);
-    T->SetBranchAddress("pos_goodness",&pos_goodness);
-    T->SetBranchAddress("pos_goodness_prev",&pos_goodness_prev);
-    T->SetBranchAddress("dir_goodness",&dir_goodness);
-    T->SetBranchAddress("dir_goodness_prev",&dir_goodness_prev);
+    T->SetBranchAddress("u",&u);
+    T->SetBranchAddress("u_prev",&u_prev);
+    T->SetBranchAddress("v",&v);
+    T->SetBranchAddress("v_prev",&v_prev);
+    T->SetBranchAddress("w",&w);
+    T->SetBranchAddress("w_prev",&w_prev);
+    T->SetBranchAddress("r",&r);
+    T->SetBranchAddress("r_prev",&r_prev);
+    T->SetBranchAddress("x",&x);
+    T->SetBranchAddress("x_prev",&x_prev);
+    T->SetBranchAddress("y",&y);
+    T->SetBranchAddress("y_prev",&y_prev);
+    T->SetBranchAddress("z",&z);
+    T->SetBranchAddress("z_prev",&z_prev);
+    T->SetBranchAddress("good_pos",&good_pos);
+    T->SetBranchAddress("good_pos_prev",&good_pos_prev);
+    T->SetBranchAddress("good_dir",&good_dir);
+    T->SetBranchAddress("good_dir_prev",&good_dir_prev);
 
     signal->Branch("interevent_dist_fv",&interevent_dist_fv);
     signal->Branch("interevent_time",&interevent_time);
@@ -135,14 +150,24 @@ int main(int argc, char** argv)
     signal->Branch("n9_prev",&n9_prev);
     signal->Branch("nhit",&nhit);
     signal->Branch("nhit_prev",&nhit_prev);
-    signal->Branch("reco_r",&reco_r);
-    signal->Branch("reco_r_prev",&reco_r_prev);
-    signal->Branch("reco_z",&reco_z);
-    signal->Branch("reco_z_prev",&reco_z_prev);
-    signal->Branch("pos_goodness",&pos_goodness);
-    signal->Branch("pos_goodness_prev",&pos_goodness_prev);
-    signal->Branch("dir_goodness",&dir_goodness);
-    signal->Branch("dir_goodness_prev",&dir_goodness_prev);
+    signal->Branch("u",&u);
+    signal->Branch("u_prev",&u_prev);
+    signal->Branch("v",&v);
+    signal->Branch("v_prev",&v_prev);
+    signal->Branch("w",&w);
+    signal->Branch("w_prev",&w_prev);
+    signal->Branch("r",&r);
+    signal->Branch("r_prev",&r_prev);
+    signal->Branch("x",&x);
+    signal->Branch("x_prev",&x_prev);
+    signal->Branch("y",&y);
+    signal->Branch("y_prev",&y_prev);
+    signal->Branch("z",&z);
+    signal->Branch("z_prev",&z_prev);
+    signal->Branch("good_pos",&good_pos);
+    signal->Branch("good_pos_prev",&good_pos_prev);
+    signal->Branch("good_dir",&good_dir);
+    signal->Branch("good_dir_prev",&good_dir_prev);
 
     //loop through entries to get the inner_dist_fv and n9
     for (int entry=0; entry < T->GetEntries(); entry++)
@@ -151,11 +176,11 @@ int main(int argc, char** argv)
   
       //We will only run with events with a valid fit and sensical values
       //These should be taken into account when calculating S & B efficiencies
-      if((interevent_dist_fv <= 0) || (interevent_dist_fv > 15000.0) || (interevent_time <= 0))
+      if((interevent_dist_fv <= 0) || (interevent_dist_fv > 50000.0) || (interevent_time <= 0))
         continue;
-      if(dir_goodness < 0.1 || pos_goodness <= 0 || n9 <= -1 || reco_r > 5.42 || reco_r <= 0 || abs(reco_z) > 5.42 || abs(reco_z) <= 0 )
+      if(good_dir < 0 || good_pos <= 0 || n9 <= -1 || r > 100.0 || r <= 0 || abs(z) > 100.0 || abs(z) <= 0 )
         continue;
-      if(dir_goodness_prev < 0.1 || pos_goodness_prev <= 0 || n9_prev <= -1 || reco_r_prev > 5.42 || reco_r_prev <= 0 || abs(reco_z_prev) > 5.42 || abs(reco_z_prev) <= 0 )
+      if(good_dir_prev < 0 || good_pos_prev <= 0 || n9_prev <= -1 || r_prev > 100.0 || r_prev <= 0 || abs(z_prev) > 100.0 || abs(z_prev) <= 0 )
         continue;
       signal->Fill();
     }
@@ -177,11 +202,17 @@ int main(int argc, char** argv)
     Double_t n9,n9_prev;
     Double_t pe,pe_prev;
     Double_t nhit, nhit_prev;
-    Double_t pos_goodness,pos_goodness_prev;
-    Double_t dir_goodness, dir_goodness_prev;
-    Double_t reco_r, reco_r_prev;
-    Double_t reco_z, reco_z_prev;
-    
+    Double_t good_pos,good_pos_prev;
+    Double_t good_dir, good_dir_prev;
+    Double_t u, u_prev;
+    Double_t v, v_prev;
+    Double_t w, w_prev;
+    Double_t x, x_prev;
+    Double_t y, y_prev;
+    Double_t r, r_prev;
+    Double_t z, z_prev;
+
+   
     T->SetBranchAddress("interevent_dist_fv",&interevent_dist_fv);
     T->SetBranchAddress("interevent_time",&interevent_time);
     T->SetBranchAddress("pe",&pe);
@@ -190,14 +221,24 @@ int main(int argc, char** argv)
     T->SetBranchAddress("n9_prev",&n9_prev);
     T->SetBranchAddress("nhit",&nhit);
     T->SetBranchAddress("nhit_prev",&nhit_prev);
-    T->SetBranchAddress("reco_r",&reco_r);
-    T->SetBranchAddress("reco_r_prev",&reco_r_prev);
-    T->SetBranchAddress("reco_z",&reco_z);
-    T->SetBranchAddress("reco_z_prev",&reco_z_prev);
-    T->SetBranchAddress("pos_goodness",&pos_goodness);
-    T->SetBranchAddress("pos_goodness_prev",&pos_goodness_prev);
-    T->SetBranchAddress("dir_goodness",&dir_goodness);
-    T->SetBranchAddress("dir_goodness_prev",&dir_goodness_prev);
+    T->SetBranchAddress("u",&u);
+    T->SetBranchAddress("u_prev",&u_prev);
+    T->SetBranchAddress("v",&v);
+    T->SetBranchAddress("v_prev",&v_prev);
+    T->SetBranchAddress("w",&w);
+    T->SetBranchAddress("w_prev",&w_prev);
+    T->SetBranchAddress("r",&r);
+    T->SetBranchAddress("r_prev",&r_prev);
+    T->SetBranchAddress("x",&x);
+    T->SetBranchAddress("x_prev",&x_prev);
+    T->SetBranchAddress("y",&y);
+    T->SetBranchAddress("y_prev",&y_prev);
+    T->SetBranchAddress("z",&z);
+    T->SetBranchAddress("z_prev",&z_prev);
+    T->SetBranchAddress("good_pos",&good_pos);
+    T->SetBranchAddress("good_pos_prev",&good_pos_prev);
+    T->SetBranchAddress("good_dir",&good_dir);
+    T->SetBranchAddress("good_dir_prev",&good_dir_prev);
 
     background->Branch("interevent_dist_fv",&interevent_dist_fv);
     background->Branch("interevent_time",&interevent_time);
@@ -207,14 +248,24 @@ int main(int argc, char** argv)
     background->Branch("n9_prev",&n9_prev);
     background->Branch("nhit",&nhit);
     background->Branch("nhit_prev",&nhit_prev);
-    background->Branch("reco_r",&reco_r);
-    background->Branch("reco_r_prev",&reco_r_prev);
-    background->Branch("reco_z",&reco_z);
-    background->Branch("reco_z_prev",&reco_z_prev);
-    background->Branch("pos_goodness",&pos_goodness);
-    background->Branch("pos_goodness_prev",&pos_goodness_prev);
-    background->Branch("dir_goodness",&dir_goodness);
-    background->Branch("dir_goodness_prev",&dir_goodness_prev);
+    background->Branch("u",&u);
+    background->Branch("u_prev",&u_prev);
+    background->Branch("v",&v);
+    background->Branch("v_prev",&v_prev);
+    background->Branch("w",&w);
+    background->Branch("w_prev",&w_prev);
+    background->Branch("r",&r);
+    background->Branch("r_prev",&r_prev);
+    background->Branch("x",&x);
+    background->Branch("x_prev",&x_prev);
+    background->Branch("y",&y);
+    background->Branch("y_prev",&y_prev);
+    background->Branch("z",&z);
+    background->Branch("z_prev",&z_prev);
+    background->Branch("good_pos",&good_pos);
+    background->Branch("good_pos_prev",&good_pos_prev);
+    background->Branch("good_dir",&good_dir);
+    background->Branch("good_dir_prev",&good_dir_prev);
 
     //loop through entries to get the inner_dist_fv and n9
     for (int entry=0; entry < T->GetEntries(); entry++)
@@ -223,11 +274,11 @@ int main(int argc, char** argv)
   
       //We will only run with events with a valid fit and sensical values
       //These should be taken into account when calculating S & B efficiencies
-      if((interevent_dist_fv <= 0) || (interevent_dist_fv > 15000.0) || (interevent_time <= 0))
+      if((interevent_dist_fv <= 0) || (interevent_dist_fv > 50000.0) || (interevent_time <= 0))
         continue;
-      if(dir_goodness < 0.1 || pos_goodness <= 0 || n9 <= -1 || reco_r > 5.42 || reco_r <= 0 || abs(reco_z) > 5.42 || abs(reco_z) <= 0 )
+      if(good_dir < 0 || good_pos <= 0 || n9 <= -1 || r > 100.0 || r <= 0 || abs(z) > 100.0 || abs(z) <= 0 )
         continue;
-      if(dir_goodness_prev < 0.1 || pos_goodness_prev <= 0 || n9_prev <= -1 || reco_r_prev > 5.42 || reco_r_prev <= 0 || abs(reco_z_prev) > 5.42 || abs(reco_z_prev) <= 0 )
+      if(good_dir_prev < 0 || good_pos_prev <= 0 || n9_prev <= -1 || r_prev > 100.0 || r_prev <= 0 || abs(z_prev) > 100.0 || abs(z_prev) <= 0 )
         continue;
       background->Fill();
     }

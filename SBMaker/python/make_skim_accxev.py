@@ -227,7 +227,8 @@ if __name__ == '__main__':
             #just -1
             if eu.isFiducial(FV_RADIUS, FV_HEIGHT, deltree.x, deltree.y, 
                     deltree.z) is False:
-                continue
+                print("THIS AINT FIDUCIAL")
+                #continue
             if deltree.nhit < 0 or deltree.nhit > 10000:
                 continue
             if deltree.pe < 0 or abs(deltree.pe) > 1.E6:
@@ -260,7 +261,8 @@ if __name__ == '__main__':
             prompttree.GetEntry(Buffer_entries[i])
             if eu.isFiducial(FV_RADIUS, FV_HEIGHT, prompttree.x, prompttree.y, 
                     prompttree.z) is False:
-                continue
+                print("THIS ALSO AINT FIDUCIAL")
+                #continue
             if prompttree.nhit < 0 or prompttree.nhit > 10000:
                 continue
             if prompttree.pe < 0 or abs(prompttree.pe) > 1.E6:
