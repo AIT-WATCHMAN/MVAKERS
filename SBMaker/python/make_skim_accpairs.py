@@ -72,13 +72,12 @@ def loadNewEvent(bufffile, entries, timediffs):
     shot =np.random.rand()
     #Assuming Bkg_rates is a numpy array
     for i in xrange(len(Bkg_rates_validfits)):
-        if i > 0:
-            if shot < (sum(Bkg_rates_validfits[0:i]) / \
-                    sum(Bkg_rates_validfits[0:len(Bkg_rates_validfits)])):
-                Bkg_entrynums[i]+=1
-                entries.append(int(Bkg_entrynums[i]))
-                bufffile.append(Bkg_files[i])
-                timediffs.append(eu.shootTimeDiff(VALID_RATE))
+        if shot < (sum(Bkg_rates_validfits[0:i+1]) / \
+                np.sum(Bkg_rates_validfits)):
+            Bkg_entrynums[i]+=1
+            entries.append(int(Bkg_entrynums[i]))
+            bufffile.append(Bkg_files[i])
+            timediffs.append(eu.shootTimeDiff(VALID_RATE))
     return bufffile, entries, timediffs
 
 def deleteOld(bufffiles, entries, timediffs):
