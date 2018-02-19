@@ -78,6 +78,7 @@ def loadNewEvent(bufffile, entries, timediffs):
             entries.append(int(Bkg_entrynums[i]))
             bufffile.append(Bkg_files[i])
             timediffs.append(eu.shootTimeDiff(VALID_RATE))
+            break
     return bufffile, entries, timediffs
 
 def deleteOld(bufffiles, entries, timediffs):

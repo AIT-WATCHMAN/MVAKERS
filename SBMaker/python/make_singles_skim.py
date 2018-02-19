@@ -28,12 +28,13 @@ PHOTOCOVERAGE = "25pct" #specify which PC directory you want to analyze from
 
 #######DIRECTORY OF FILES#############
 basepath = os.path.dirname(__file__)
-MAINDIR = "pass2_root_files_tankRadius_10000.000000_halfHeight_10000.000000_shieldThickness_1500.000000_U238_PPM_0.341000_Th232_PPM_1.330000_Rn222_0.001400"
-ANALYZEDIR = os.path.abspath(os.path.join(basepath, "..", "..","data", "teal2500", \
-        MAINDIR, "25pct"))
+#MAINDIR = "pass2_root_files_tankRadius_10000.000000_halfHeight_10000.000000_shieldThickness_1500.000000_U238_PPM_0.341000_Th232_PPM_1.330000_Rn222_0.001400"
+MAINDIR = "1500"
+ANALYZEDIR = os.path.abspath(os.path.join(basepath, "..", "..","data", "PMTActivityAnalysis", \
+        MAINDIR, "20pct"))
 
 #######NAME OF OUTPUT FILE##########
-fileN = 'tester.root'
+fileN = '1500_20pct_accidentals.root'
 
 #####FV parameters used to accept/reject IBD pairs#####
 FV_RADIUS = 10.84/2.  #in m
@@ -48,7 +49,7 @@ for bkgtype in Bkg_types:
 for loc in Bkg_filelocs:
     rfile = ROOT.TFile(loc, "read")
     Bkg_files.append(rfile)
-
+print("BKGFILE LOCS: " + str(Bkg_filelocs))
 
 #Want to shoot the rates of events that could be a prompt candidate.  Only want
 #To shoot using this rate since only valid events are filled into the ntuple
@@ -69,11 +70,13 @@ def loadNewEvent():
     shot =np.random.rand()
     #Assuming Bkg_rates is a numpy array
     for i in xrange(len(Bkg_rates_validfits)):
-        if shot < (sum(Bkg_rates_validfits[0:i+1]) / \
-                np.sum(Bkg_rates_validfits)):
+	frac_thisfile = sum(Bkg_rates_validfits[0:i+1]) / \
+                np.sum(Bkg_rates_validfits)
+        if shot < frac_thisfile:
             Bkg_entrynums[i]+=1
             thisentry = (int(Bkg_entrynums[i]))
             thisfile = Bkg_files[i]
+            break
     return thisentry, thisfile
         
 if __name__ == '__main__':
@@ -130,15 +133,17 @@ if __name__ == '__main__':
     #The following continues as long as the selected file still has entrys left
     FileDepleted = False
     entrynum = 0
-    while (not FileDepleted) and (entrynum < 100000000):
+    events_viewed = 0
+    while (not FileDepleted) and (entrynum < 100000):
         if float(entrynum) / 20000.0 == int(entrynum / 20000.0):
             print("ENTRYNUM: " + str(entrynum))
-
+	events_viewed+=1
         #Shoot for the next file (and entrynumber) to pull fromr
         entrynumber, thisevent_bkgfile = loadNewEvent()
-        thisevent_bkgfile.cd()
+	thisevent_bkgfile.cd()
         bkgtree = thisevent_bkgfile.Get("data")
         if entrynumber >= bkgtree.GetEntries():
+            print("FILE WAS DEPLETED...")
             FileDepleted = True
             break
         bkgtree.GetEntry(entrynumber)
@@ -146,8 +151,7 @@ if __name__ == '__main__':
         #just -1
         if eu.isFiducial(FV_RADIUS, FV_HEIGHT, bkgtree.x, bkgtree.y, 
                 bkgtree.z) is False:
-            print("THIS AINT FIDUCIAL")
-            #continue
+            continue
         pe_rf[0] = bkgtree.pe 
         n9_rf[0] = bkgtree.n9
 
@@ -168,4 +172,6 @@ if __name__ == '__main__':
     t_root.Write()
     m_root.Write()
     f_root.Close()
+    print("TOTAL EVENTS WENT OVER: " + str(events_viewed))
     print("BKGFILE MAX ENTRY: " + str(np.max(Bkg_entrynums)))
+    print("BKGFILE MIN ENTRY: " + str(np.min(Bkg_entrynums)))
