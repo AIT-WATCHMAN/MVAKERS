@@ -86,6 +86,7 @@ if __name__ == '__main__':
     nhit_rf      = np.zeros(1,dtype=float64)
     pe_rf     = np.zeros(1,dtype=float64)
     event_number_rf        = np.zeros(1,dtype=float64)
+    is_fiducial_rf = np.zeros(1,dtype=bool)
     good_pos_rf   = np.zeros(1,dtype=float64)
     u_rf   = np.zeros(1,dtype=float64)
     v_rf   = np.zeros(1,dtype=float64)
@@ -116,7 +117,8 @@ if __name__ == '__main__':
     t_root.Branch('pe',       pe_rf,    'pe/D')
     t_root.Branch('nhit',       nhit_rf,    'nhit/D')
     t_root.Branch('n9',      n9_rf,   'n9/D')
-    
+
+    t_root.Branch('is_fiducial', is_fiducial_rf, 'is_fiducial/O')    
     t_root.Branch('event_number',        event_number_rf,     'event_number/D')
     t_root.Branch('good_pos',        good_pos_rf ,      'good_pos/D')
     t_root.Branch('u',     u_rf,'u/D')
@@ -134,7 +136,7 @@ if __name__ == '__main__':
     FileDepleted = False
     entrynum = 0
     events_viewed = 0
-    while (not FileDepleted) and (entrynum < 100000):
+    while (not FileDepleted) and (entrynum < 10000000):
         if float(entrynum) / 20000.0 == int(entrynum / 20000.0):
             print("ENTRYNUM: " + str(entrynum))
 	events_viewed+=1
@@ -149,9 +151,8 @@ if __name__ == '__main__':
         bkgtree.GetEntry(entrynumber)
         #Some bad reconstruction checks; don't want a ton of crazy nums,
         #just -1
-        if eu.isFiducial(FV_RADIUS, FV_HEIGHT, bkgtree.x, bkgtree.y, 
-                bkgtree.z) is False:
-            continue
+        is_fiducial_rf[0] = eu.isFiducial(FV_RADIUS, FV_HEIGHT, bkgtree.x, bkgtree.y, 
+                bkgtree.z)
         pe_rf[0] = bkgtree.pe 
         n9_rf[0] = bkgtree.n9
 
