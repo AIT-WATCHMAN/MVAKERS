@@ -20,12 +20,17 @@ def GetRates_Valids(rootfile_list):
     for f in rootfile_list:
         f.cd()
         frunSummary = f.Get('runSummary')
-        frunSummary.GetEntry(0)
-        rateHz = float(frunSummary.rateHz)
-        potential_prompts = float(frunSummary.potential_prompts)
-        nEvents = float(frunSummary.nEvents)
-        valid_rate = rateHz * ((potential_prompts)/ \
-               (nEvents))
+        totprompts = 0
+        totevents = 0
+        tot_rateHz = 0.0
+        for i in xrange(frunSummary.GetEntries()):
+            frunSummary.GetEntry(i)
+            tot_rateHz += float(frunSummary.rateHz)
+            totprompts += float(frunSummary.potential_prompts)
+            totevents += float(frunSummary.nEvents)
+        valid_rate = (tot_rateHz/float(frunSummary.GetEntries())) * \
+                ((totprompts)/ \
+            (totevents))
         ValidCandidate_rates.append(valid_rate)
     return np.array(ValidCandidate_rates)
 
@@ -34,9 +39,12 @@ def GetRates_Raw(rootfile_list):
     Raw_rates = []
     for f in rootfile_list:
         f.cd()
+        tot_rateHz = 0.0
         frunSummary = f.Get('runSummary')
-        frunSummary.GetEntry(0)
-        rateHz = float(frunSummary.rateHz)
+        for i in xrange(frunSummary.GetEntries()):
+            frunSummary.GetEntry(i)
+            tot_rateHz += float(frunSummary.rateHz)
+        rateHz = tot_rateHz/float(frunSummary.GetEntries())
         Raw_rates.append(rateHz)
     return np.array(Raw_rates)
 
