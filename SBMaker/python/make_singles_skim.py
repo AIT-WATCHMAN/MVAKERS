@@ -30,11 +30,10 @@ PHOTOCOVERAGE = "25pct" #specify which PC directory you want to analyze from
 basepath = os.path.dirname(__file__)
 #MAINDIR = "pass2_root_files_tankRadius_10000.000000_halfHeight_10000.000000_shieldThickness_1500.000000_U238_PPM_0.341000_Th232_PPM_1.330000_Rn222_0.001400"
 MAINDIR = "1500"
-ANALYZEDIR = os.path.abspath(os.path.join(basepath, "..", "..","data", "PMTActivityAnalysis", \
-        MAINDIR, "20pct"))
+ANALYZEDIR = os.path.abspath(os.path.join(basepath, "..", "..","data", "PMTActivityAnalysis", MAINDIR, PHOTOCOVERAGE))
 
 #######NAME OF OUTPUT FILE##########
-fileN = '1500_20pct_accidentals.root'
+fileN = '1500_25pct_accidentals.root'
 
 #####FV parameters used to accept/reject IBD pairs#####
 FV_RADIUS = 10.84/2.  #in m
@@ -70,8 +69,7 @@ def loadNewEvent():
     shot =np.random.rand()
     #Assuming Bkg_rates is a numpy array
     for i in xrange(len(Bkg_rates_validfits)):
-	frac_thisfile = sum(Bkg_rates_validfits[0:i+1]) / \
-                np.sum(Bkg_rates_validfits)
+        frac_thisfile = sum(Bkg_rates_validfits[0:i+1]) / np.sum(Bkg_rates_validfits)
         if shot < frac_thisfile:
             Bkg_entrynums[i]+=1
             thisentry = (int(Bkg_entrynums[i]))
@@ -106,11 +104,17 @@ if __name__ == '__main__':
     '''Set up the tree and branch of variables one wishes to save'''
     fiducial_r = np.zeros(1,dtype=float64)
     fiducial_z = np.zeros(1,dtype=float64)
+    raw_rate = np.zeros(1,dtype=float64)
+    pvalid_rate = np.zeros(1,dtype=float64)
     m_root = ROOT.TTree("Summary","Fiducial volume and time cut parameters used")
     m_root.Branch('fiducial_z', fiducial_z, 'fiducial_z/D')
     m_root.Branch('fiducial_r', fiducial_r, 'fiducial_r/D')
+    m_root.Branch('raw_rate', raw_rate, 'raw_rate/D')
+    m_root.Branch('pvalid_rate', pvalid_rate, 'pvalid_rate/D')
     fiducial_r[0] = FV_RADIUS
     fiducial_z[0] = FV_HEIGHT
+    raw_rate = RAW_RATE
+    pvalid_rate = VALID_RATE
     m_root.Fill()
 
     t_root = ROOT.TTree("CombSingles","Combined Singles File")
@@ -139,10 +143,10 @@ if __name__ == '__main__':
     while (not FileDepleted) and (entrynum < 10000000):
         if float(entrynum) / 20000.0 == int(entrynum / 20000.0):
             print("ENTRYNUM: " + str(entrynum))
-	events_viewed+=1
+        events_viewed+=1
         #Shoot for the next file (and entrynumber) to pull fromr
         entrynumber, thisevent_bkgfile = loadNewEvent()
-	thisevent_bkgfile.cd()
+        thisevent_bkgfile.cd()
         bkgtree = thisevent_bkgfile.Get("data")
         if entrynumber >= bkgtree.GetEntries():
             print("FILE WAS DEPLETED...")
