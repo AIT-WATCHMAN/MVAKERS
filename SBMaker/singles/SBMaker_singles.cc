@@ -102,7 +102,7 @@ int main(int argc, char** argv)
     TTree* T = (TTree*) mafile->Get("data");
     Double_t pe; 
     Double_t n9;
-    Double_t nhit;
+    Int_t nhit;
     Double_t good_pos;
     Double_t good_dir;
     Double_t u;
@@ -112,6 +112,7 @@ int main(int argc, char** argv)
     Double_t y;
     Double_t r;
     Double_t z;
+    Double_t closestPMT;
 
     T->SetBranchAddress("pe",&pe);
     T->SetBranchAddress("n9",&n9);
@@ -119,10 +120,10 @@ int main(int argc, char** argv)
     T->SetBranchAddress("u",&u);
     T->SetBranchAddress("v",&v);
     T->SetBranchAddress("w",&w);
-    T->SetBranchAddress("r",&r);
     T->SetBranchAddress("x",&x);
     T->SetBranchAddress("y",&y);
     T->SetBranchAddress("z",&z);
+    T->SetBranchAddress("closestPMT",&closestPMT);
     T->SetBranchAddress("good_pos",&good_pos);
     T->SetBranchAddress("good_dir",&good_dir);
 
@@ -136,6 +137,7 @@ int main(int argc, char** argv)
     signal->Branch("x",&x);
     signal->Branch("y",&y);
     signal->Branch("z",&z);
+    signal->Branch("closestPMT",&closestPMT);
     signal->Branch("good_pos",&good_pos);
     signal->Branch("good_dir",&good_dir);
 
@@ -143,6 +145,7 @@ int main(int argc, char** argv)
     for (int entry=0; entry < T->GetEntries(); entry++)
     {
       T->GetEntry(entry);
+      r = sqrt(pow(x,2) + pow(y,2));
       signal->Fill();
     }
     delete T;
@@ -156,7 +159,7 @@ int main(int argc, char** argv)
 
     TFile* mafile = TFile::Open(inbkgfiles[i].c_str(),"READ");
     //Get the tree that has the entries
-    TTree* T = (TTree*) mafile->Get("CombAcc");
+    TTree* T = (TTree*) mafile->Get("CombSingles");
     Double_t interevent_dist_fv;
     Double_t interevent_time;
     
@@ -172,7 +175,7 @@ int main(int argc, char** argv)
     Double_t y;
     Double_t r;
     Double_t z;
-
+    Double_t closestPMT;
    
     T->SetBranchAddress("pe",&pe);
     T->SetBranchAddress("n9",&n9);
@@ -180,12 +183,12 @@ int main(int argc, char** argv)
     T->SetBranchAddress("u",&u);
     T->SetBranchAddress("v",&v);
     T->SetBranchAddress("w",&w);
-    T->SetBranchAddress("r",&r);
     T->SetBranchAddress("x",&x);
     T->SetBranchAddress("y",&y);
     T->SetBranchAddress("z",&z);
     T->SetBranchAddress("good_pos",&good_pos);
     T->SetBranchAddress("good_dir",&good_dir);
+    T->SetBranchAddress("closestPMT",&closestPMT);
 
     background->Branch("pe",&pe);
     background->Branch("n9",&n9);
@@ -197,6 +200,7 @@ int main(int argc, char** argv)
     background->Branch("x",&x);
     background->Branch("y",&y);
     background->Branch("z",&z);
+    background->Branch("closestPMT",&closestPMT);
     background->Branch("good_pos",&good_pos);
     background->Branch("good_dir",&good_dir);
 
@@ -204,6 +208,7 @@ int main(int argc, char** argv)
     for (int entry=0; entry < T->GetEntries(); entry++)
     {
       T->GetEntry(entry);
+      r = sqrt(pow(x,2) + pow(y,2));
       background->Fill();
     }
     delete T;

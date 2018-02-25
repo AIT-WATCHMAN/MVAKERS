@@ -29,6 +29,14 @@ def RandShoot(mu, sigma,n):
     result = mu + (sigma * np.random.randn(n))
     return result
 
+def RandShootSmear(percent,n):
+    '''
+    Returns an array of n numbers from a normal distribution with sigma
+    percent/100.
+    '''
+    result = 1.0 + ((percent/100.0) * np.random.randn(n))
+    return result
+
 def RandShoot_p(lamb, n):
     '''
     Returns an array of n numbers from a poisson distribution of
