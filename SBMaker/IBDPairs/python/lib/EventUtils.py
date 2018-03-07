@@ -43,6 +43,9 @@ def shootTimeDiff_Slow(raw_freq):
 
 #FIXME: need a version that takes in x, y, and z, and does this
 
+def radius(x,y,z)
+    return np.sqrt(x**2 + y**2 + z**2)
+
 def innerDist(prev_x, prev_y, prev_z, x, y, z):
     return np.sqrt((prev_x - x)**2 + (prev_y - y)**2 + (prev_z - z)**2)
 
