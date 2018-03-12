@@ -31,16 +31,12 @@ parser.add_argument('--zcut', dest='ZCUT', action='store',
 parser.add_argument('--timecut', dest='TIMETHRESH', action='store',
         help='Only consider IBD candidates with an interevent time <= input')
 parser.add_argument('--distcut', dest='INTERDIST', action='store',
-        help='Only consider IBD candidates with an interevent_dist <= input.'+\
-                'Will include events with no fitValid, but cut those with' +\
-                'fitValid and failing the cut')
+        help='Only consider IBD candidates with an interevent_dist <= input.')
 parser.add_argument('--pc', dest='PHOTOCOVERAGE', action='store',
         help="Specify the photocoverage directory you want to read from"+\
                 "(FORMAT: 'Npct' for N percent photocoverage)")
 parser.add_argument('--posrcut', dest='RADIUSCUT', action='store',
-        help='Only consider IBD candidates with an interevent distance <= input.'+\
-                'Will include events with no fitValid, but cut those with' +\
-                'fitValid and failing the cut')
+        help='Only consider IBD candidates with an interevent distance <= input.')
 parser.add_argument('--datadir', dest='DATADIR', action='store',
         help="Points to data directory where background root files are located")
 parser.add_argument('--output','-o', dest='OUTFILE', action='store',
@@ -52,8 +48,6 @@ parser.set_defaults(DEBUG=False, TIMETHRESH=1.5E5,
 args = parser.parse_args()
 
 DEBUG = args.DEBUG
-NPROMPT=args.NPROMPT
-NDELAYED=args.NDELAYED
 TIMETHRESH=args.TIMETHRESH
 INTERDIST=args.INTERDIST
 RADIUSCUT=args.RADIUSCUT
@@ -66,10 +60,11 @@ PHOTOCOVERAGE=args.PHOTOCOVERAGE
 import ROOT
 from ROOT import TChain, TFile, gROOT
 import lib.playDarts as pd
+import lib.EventUtils as eu
 import lib.RootReader as rr
 
 #---------- FORMAT-SPECIFIC PARAMETERS ------------#
-dattree = "output"
+dattree = "data"
 Bkg_types = ["WV", "PMT"]  #watchmakers output has these in accidental names
 MAXPAIRS = 10000000 #Just in case you don't want a crazy amount of candidates
 #------------- END TUNABLE PARAMETERS --------------#
@@ -114,10 +109,14 @@ def loadNewEvent(buff):
     return buff
 
 def deleteOutOfWindow(buff):
-    if buff["times"][len(buff["times"])-1] - buff["times"][0] >TWINDOW:
-        del buff["times"][0]
-        del buff["files"][0]
-        del buff["entrynums"][0]
+    allinwindow = False
+    while not allinwindow:
+    	if sum(buff["times"][1:len(buff["times"])]) > TIMETHRESH:
+            del buff["times"][0]
+            del buff["files"][0]
+            del buff["entrynums"][0]
+        else:
+            allinwindow=True
     return buff
 
 
@@ -132,12 +131,11 @@ if __name__ == '__main__':
     u_p      = np.zeros(1,dtype=float64)
     v_p      = np.zeros(1,dtype=float64)
     w_p      = np.zeros(1,dtype=float64)
-    energy_p    = np.zeros(1,dtype=float64)
+    mc_energy_p    = np.zeros(1,dtype=float64)
     nhit_p     = np.zeros(1,dtype=int)
-    good_pos_p = np.zeros(1,dtype=long)
-    good_dir_p = np.zeros(1,dtype=long)
+    good_pos_p = np.zeros(1,dtype=float64)
+    good_dir_p = np.zeros(1,dtype=float64)
     pe_p     = np.zeros(1,dtype=int)
-    fitValid_p  = np.zeros(1,dtype=int)
     posr_p      = np.zeros(1,dtype=float64)
     closestPMT_p    = np.zeros(1,dtype=float64)
     n9_p       = np.zeros(1,dtype=float64)
@@ -148,12 +146,11 @@ if __name__ == '__main__':
     u_d      = np.zeros(1,dtype=float64)
     v_d      = np.zeros(1,dtype=float64)
     w_d      = np.zeros(1,dtype=float64)
-    energy_d    = np.zeros(1,dtype=float64)
+    mc_energy_d    = np.zeros(1,dtype=float64)
     nhit_d     = np.zeros(1,dtype=int)
-    good_pos_d = np.zeros(1,dtype=long)
-    good_dir_d = np.zeros(1,dtype=long)
+    good_pos_d = np.zeros(1,dtype=float64)
+    good_dir_d = np.zeros(1,dtype=float64)
     pe_d     = np.zeros(1,dtype=int)
-    fitValid_d  = np.zeros(1,dtype=int)
     posr_d      = np.zeros(1,dtype=float64)
     closestPMT_d    = np.zeros(1,dtype=float64)
     n9_d       = np.zeros(1,dtype=float64)
@@ -164,7 +161,6 @@ if __name__ == '__main__':
     pair_number = np.zeros(1,dtype=int)
 
     #Variables for filling ProcSummary
-    allevnum = np.zeros(1,dtype=int)
     allpairnum = np.zeros(1,dtype=int)
     timecut = np.zeros(1,dtype=float64)
     validrate = np.zeros(1,dtype=float64)
@@ -181,7 +177,6 @@ if __name__ == '__main__':
     f_root = ROOT.TFile(OUTFILE,"recreate")
     
     m_root = ROOT.TTree("ProcSummary","Cuts applied and some meta information")
-    m_root.Branch('allevnum', allevnum, 'allevnum/I')
     m_root.Branch('allpairnum', allpairnum, 'allpairnum/I')
     m_root.Branch('timecut', timecut, 'timecut/D')
     m_root.Branch('fitvalidsrate', validrate, 'fitvalidsrate/D')
@@ -211,12 +206,11 @@ if __name__ == '__main__':
     t_root.Branch('w_p',      w_p,   'w_p/D')
     t_root.Branch('v_p',      v_p,   'v_p/D')
     t_root.Branch('u_p',      u_p,   'u_p/D')
-    t_root.Branch("energy_p",    energy_p, 'energy_p/D')
+    t_root.Branch("mc_energy_p",    mc_energy_p, 'mc_energy_p/D')
     t_root.Branch("nhit_p",     nhit_p,  'nhit_p/I')
-    t_root.Branch("good_pos_p", good_pos_p,   'good_pos_p/L')
-    t_root.Branch("good_dir_p", good_dir_p,   'good_dir_p/L')
+    t_root.Branch("good_pos_p", good_pos_p,   'good_pos_p/D')
+    t_root.Branch("good_dir_p", good_dir_p,   'good_dir_p/D')
     t_root.Branch("pe_p", pe_p,   'pe_p/I')
-    t_root.Branch("fitValid_p", fitValid_p, "fitValid_p/I")
     t_root.Branch("closestPMT_p", closestPMT_p, "closestPMT_p/D")
     t_root.Branch("n9_p", n9_p, "n9_p/D")
 
@@ -227,12 +221,11 @@ if __name__ == '__main__':
     t_root.Branch('w_d',      w_d,   'w_d/D')
     t_root.Branch('v_d',      v_d,   'v_d/D')
     t_root.Branch('u_d',      u_d,   'u_d/D')
-    t_root.Branch("energy_d",    energy_d, 'energy_d/D')
+    t_root.Branch("mc_energy_d",    mc_energy_d, 'mc_energy_d/D')
     t_root.Branch("nhit_d",     nhit_d,  'nhit_d/I')
-    t_root.Branch("good_pos_d", good_pos_d,   'good_pos_d/L')
-    t_root.Branch("good_dir_d", good_dir_d,   'good_dir_d/L')
+    t_root.Branch("good_pos_d", good_pos_d,   'good_pos_d/D')
+    t_root.Branch("good_dir_d", good_dir_d,   'good_dir_d/D')
     t_root.Branch("pe_d", pe_d,   'pe_d/I')
-    t_root.Branch("fitValid_d", fitValid_d, "fitValid_d/I")
     t_root.Branch("closestPMT_d", closestPMT_d, "closestPMT_d/D")
     t_root.Branch("n9_d", n9_d, "n9_d/D")
 
@@ -256,10 +249,6 @@ if __name__ == '__main__':
 
         #load a new event into our buffer
         Buffer = loadNewEvent(Buffer)
-        if Buffer["entrynums"][len(Buffer["entrynums"])-1] == \
-                Buffer["files"][len(Buffer["files"])-1].GetEntries():
-            print("A BACKGROUND FILE WAS DEPLETED")
-            break
         #Remove events at start of buffer outside the time width range
         if len(Buffer["entrynums"]) <=1:
             continue
@@ -268,45 +257,51 @@ if __name__ == '__main__':
 
         #loop through and match this delayed event with all previous prompts
         Delayedfile = Buffer["files"][delayedindex]
-        for i in xrange(delayedindex):
-            Promptfile.GetEntry(Buffer["entrynums"][i])
-            nhit_p[0]     = Promptfile.nhits 
-            x_p[0]       = Promptfile.x
-            y_p[0]        = Promptfile.y
-            z_p[0]      = Promptfile.z
-            posr_p[0]        = eu.radius(x_p[0],y_p[0],z_p[0])
-            u_p[0]      = Promptfile.u
-            v_p[0]      = Promptfile.v 
-            w_p[0]      = Promptfile.w 
-            energy_p[0]    = Promptfile.energy 
-            good_pos_p[0] = Promptfile.good_pos 
-            good_dir_p[0] = Promptfile.good_dir 
-            pe_p[0]     = Promptfile.pe 
-            fitValid_p[0]  = Promptfile.fitValid
-            closestPMT_p[0]  = Promptfile.closestPMT
-            n9_p[0]  = Promptfile.n9
+        Delayedtree = Delayedfile.Get(dattree)
+	#Check if we've exhausted a MC file's data yet
+        if Buffer["entrynums"][len(Buffer["entrynums"])-1] == \
+                Delayedtree.GetEntries():
+            print("A BACKGROUND FILE WAS DEPLETED")
+            break
 
-            Delayedfile.GetEntry(Buffer["entrynums"][delayedindex])
-            nhit_d[0]     = Delayedfile.nhits 
-            x_d[0]       = Delayedfile.x
-            y_d[0]        = Delayedfile.y
-            z_d[0]      = Delayedfile.z
+        for i in xrange(delayedindex):
+            Promptfile = Buffer["files"][i]
+            Prompttree = Promptfile.Get(dattree)
+            Prompttree.GetEntry(Buffer["entrynums"][i])
+            nhit_p[0]     = Prompttree.nhit 
+            x_p[0]       = Prompttree.x
+            y_p[0]        = Prompttree.y
+            z_p[0]      = Prompttree.z
+            posr_p[0]        = eu.radius(x_p[0],y_p[0],z_p[0])
+            u_p[0]      = Prompttree.u
+            v_p[0]      = Prompttree.v 
+            w_p[0]      = Prompttree.w 
+            mc_energy_p[0]    = Prompttree.mc_energy 
+            good_pos_p[0] = Prompttree.good_pos 
+            good_dir_p[0] = Prompttree.good_dir 
+            pe_p[0]     = Prompttree.pe 
+            closestPMT_p[0]  = Prompttree.closestPMT
+            n9_p[0]  = Prompttree.n9
+
+            Delayedtree.GetEntry(Buffer["entrynums"][delayedindex])
+            nhit_d[0]     = Delayedtree.nhit 
+            x_d[0]       = Delayedtree.x
+            y_d[0]        = Delayedtree.y
+            z_d[0]      = Delayedtree.z
             posr_d[0]        = eu.radius(x_d[0],y_d[0],z_d[0])
-            u_d[0]      = Delayedfile.u
-            v_d[0]      = Delayedfile.v 
-            w_d[0]      = Delayedfile.w 
-            energy_d[0]    = Delayedfile.energy 
-            good_pos_d[0] = Delayedfile.good_pos 
-            good_dir_d[0] = Delayedfile.good_dir 
-            pe_d[0]     = Delayedfile.pe 
-            fitValid_d[0]  = Delayedfile.fitValid
-            closestPMT_d[0]  = Delayedfile.closestPMT
-            n9_d[0]  = Delayedfile.n9
+            u_d[0]      = Delayedtree.u
+            v_d[0]      = Delayedtree.v 
+            w_d[0]      = Delayedtree.w 
+            mc_energy_d[0]    = Delayedtree.mc_energy 
+            good_pos_d[0] = Delayedtree.good_pos 
+            good_dir_d[0] = Delayedtree.good_dir 
+            pe_d[0]     = Delayedtree.pe 
+            closestPMT_d[0]  = Delayedtree.closestPMT
+            n9_d[0]  = Delayedtree.n9
             
             #Check for intereventdist cut and fill in interevent dist
             if INTERDIST is not None:
-                if fitValid_p[0] == 1 and fitValid_d[0] == 1 and \
-                        float(interevent_dist[0]) > float(INTERDIST):
+                if float(interevent_dist[0]) > float(INTERDIST):
                     continue
             else:
                 interevent_dist[0] = eu.innerDist(x_p[0], y_p[0],
@@ -315,7 +310,6 @@ if __name__ == '__main__':
             pair_number[0] = pairnum
             t_root.Fill()
             pairnum+=1
-    allevnum[0] = indexnum
     allpairnum[0] = pairnum
     m_root.Fill()
     f_root.cd()
