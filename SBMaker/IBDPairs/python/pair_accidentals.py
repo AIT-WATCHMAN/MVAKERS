@@ -198,7 +198,7 @@ if __name__ == '__main__':
        zcut[0] = ZCUT
 
 
-    t_root = ROOT.TTree("CombinedOutput","Combined Prompt & Delayeds in AmBe Data")
+    t_root = ROOT.TTree("CombinedOutput","Combined Prompt & Delayed candidates from Background MC")
     t_root.Branch('z_p',      z_p,   'z_p/D')
     t_root.Branch('y_p',      y_p,   'y_p/D')
     t_root.Branch('x_p',      x_p,   'x_p/D')
@@ -300,12 +300,11 @@ if __name__ == '__main__':
             n9_d[0]  = Delayedtree.n9
             
             #Check for intereventdist cut and fill in interevent dist
+            interevent_dist[0] = eu.innerDist(x_p[0], y_p[0],
+                    z_p[0],x_d[0],y_d[0],z_d[0])
             if INTERDIST is not None:
                 if float(interevent_dist[0]) > float(INTERDIST):
                     continue
-            else:
-                interevent_dist[0] = eu.innerDist(x_p[0], y_p[0],
-                        z_p[0],x_d[0],y_d[0],z_d[0])
             interevent_time[0] = sum(Buffer["times"][i+1:delayedindex+1])
             pair_number[0] = pairnum
             t_root.Fill()

@@ -13,8 +13,29 @@ def GetEntryLengths(rootfile_list):
         EntryLengths.append(entrylength)
     return np.array(EntryLengths)
 
-#Make a function that grabs a particular entry from a root file given to it.
+def GetPromptEff(rootfile):
+    '''
+    Returns the fraction of events generated that passed the preliminary
+    cuts for the prompt event.  The specs on the cuts defined can be found
+    in the runSummary tree of these files.
+    '''
+    #initialize memory for branch data
+    rootfile.cd()
+    frunSummary = rootfile.Get('runSummary')
+    totprompts = 0
+    totevents = 0
+    for i in xrange(frunSummary.GetEntries()):
+        frunSummary.GetEntry(i)
+        totprompts += float(frunSummary.potential_prompts)
+        totevents += float(frunSummary.nEvents)
+    valid_efficiency = (float(totprompts)/float(totevents))
+    return valid_efficiency
+
 def GetRates_Valids(rootfile_list):
+    '''
+    Function returns the total rate of events that pass the prompt cuts
+    defined in each rootfile's runSummary tree.
+    '''
     #initialize memory for branch data
     ValidCandidate_rates = []
     for f in rootfile_list:
@@ -35,6 +56,10 @@ def GetRates_Valids(rootfile_list):
     return np.array(ValidCandidate_rates)
 
 def GetRates_Raw(rootfile_list):
+    '''
+    Returns the total rate of all events according to raw rates defined in
+    each rootfile's runSummary tree.
+    '''
     #initialize memory for branch data
     Raw_rates = []
     for f in rootfile_list:
