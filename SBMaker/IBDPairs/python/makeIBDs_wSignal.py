@@ -13,6 +13,8 @@ import time
 import numpy as np
 from numpy import *
 
+import sys
+
 from sys import stdout
 import glob
 
@@ -39,12 +41,14 @@ parser.add_argument('--posrcut', dest='RADIUSCUT', action='store',
         help='Only consider IBD candidates with an interevent distance <= input.')
 parser.add_argument('--datadir', dest='DATADIR', action='store',
         help="Points to data directory with positron and neutron files")
+parser.add_argument('--ITID', dest='USEITID', action='store_true',
+        help="Will use data in DATADIR/ITID/ to shoot interevent times")
 parser.add_argument('--output','-o', dest='OUTFILE', action='store',
         help="Provide the name desired for the output root file")
 
 parser.set_defaults(DEBUG=False, TIMETHRESH=1.5E5, 
         INTERDIST=None, RADIUSCUT=None,ZCUT=None,DATADIR=None,
-        PHOTOCOVERAGE='25pct',OUTFILE='output.root')
+        PHOTOCOVERAGE='25pct',OUTFILE='output.root',USEITID=False)
 args = parser.parse_args()
 
 DEBUG = args.DEBUG
@@ -55,6 +59,11 @@ ZCUT=args.ZCUT
 DATADIR=args.DATADIR
 OUTFILE=args.OUTFILE
 PHOTOCOVERAGE=args.PHOTOCOVERAGE
+USEITID=args.USEITID
+
+if DATADIR is None:
+    print("No data directory specified for pairing IBDs. exiting.")
+    sys.exit(0)
 
 #have to import ROOT here, or it steals --help's output
 import ROOT
@@ -62,6 +71,7 @@ from ROOT import TChain, TFile, gROOT
 import lib.playDarts as pd
 import lib.EventUtils as eu
 import lib.RootReader as rr
+import lib.ITIDShooter as itd
 
 #---------- FORMAT-SPECIFIC PARAMETERS ------------#
 dattree = "data"
@@ -74,21 +84,36 @@ ANALYZEDIR = DATADIR+"/"+PHOTOCOVERAGE
 positron_filename = ANALYZEDIR+"/watchman_"+event_types["prompt"]+".root"
 neutron_filename = ANALYZEDIR+"/watchman_"+event_types["delayed"]+".root"
 positron_file = ROOT.TFile(positron_filename,"READ")
-ptree = positron_file.Get("output")
+ptree = positron_file.Get(dattree)
 neutron_file = ROOT.TFile(neutron_filename,"READ")
-ntree = neutron_file.Get("output")
+ntree = neutron_file.Get(dattree)
 
 #Want to shoot the rates of events that could be a prompt candidate.  Only want
 #To shoot using rates_validfits since only valid events are filled into the ntuple
-positron_eff_validfits = rr.GetPromptEff(prompt_file)
-neutron_eff_validfits = rr.GetPromptEff(del_file)
+positron_eff_validfits = rr.GetPromptEff(positron_file)
+neutron_eff_validfits = rr.GetPromptEff(neutron_file)
 file_entrynums = np.zeros(len(event_types))
 
+#We'll shoot interevent distances and times here
+ITID_filenames = glob.glob(ANALYZEDIR+"/ITID/*.root")
+ 
 if DEBUG is True:
     print("PROMPT EFFICIENCY: " + str(prompt_eff_validfits))
     print("DELAYED EFFICIENCY: " + str(del_eff_validfits))
 
 if __name__ == '__main__':
+    #Shoot the interevent_time histogram first
+    if USEITID is True:
+        if DEBUG is True:
+            print("Using data in DATADIR/ITID to shoot interevent_times")
+        timehistogram = itd.MakeTimeHist(ITID_filenames,TIMETHRESH)
+        timefit = itd.MakeTimeFit_wald(timehistogram)
+        if DEBUG is True:
+            print("Finished fit to times in ITID data.  Showing fits...")
+            timehistogram.Draw()
+            timefit.Draw("same")
+            time.sleep(5)
+    
 
     if DEBUG is True:
         print("SETTING UP VARIABLES FOR ROOT TREE TO BE SAVED...")
@@ -206,52 +231,55 @@ if __name__ == '__main__':
         if float(pairnum) / 20000.0 == int(pairnum / 20000.0):
             print("ENTRYNUM: " + str(pairnum))
         #loop through and match this delayed event with all previous prompts
-        if pairnum == dtree.GetEntries() or pairnum == ptree.GetEntries():
+        if pairnum == ntree.GetEntries() or pairnum == ptree.GetEntries():
             print("POSITRON OR NEUTRON FILE WAS DEPLETED")
             break
-            
-            ptree.GetEntry(pairnum)
-            nhit_p[0]     = ptree.nhit 
-            x_p[0]       = ptree.x
-            y_p[0]        = ptree.y
-            z_p[0]      = ptree.z
-            posr_p[0]        = eu.radius(x_p[0],y_p[0],z_p[0])
-            u_p[0]      = ptree.u
-            v_p[0]      = ptree.v 
-            w_p[0]      = ptree.w 
-            mc_energy_p[0]    = ptree.mc_energy 
-            good_pos_p[0] = ptree.good_pos 
-            good_dir_p[0] = ptree.good_dir 
-            pe_p[0]     = ptree.pe 
-            closestPMT_p[0]  = ptree.closestPMT
-            n9_p[0]  = ptree.n9
+        
+        ptree.GetEntry(pairnum)
+        nhit_p[0]     = ptree.nhit 
+        x_p[0]       = ptree.x
+        y_p[0]        = ptree.y
+        z_p[0]      = ptree.z
+        posr_p[0]        = eu.radius(x_p[0],y_p[0],z_p[0])
+        u_p[0]      = ptree.u
+        v_p[0]      = ptree.v 
+        w_p[0]      = ptree.w 
+        mc_energy_p[0]    = ptree.mc_energy 
+        good_pos_p[0] = ptree.good_pos 
+        good_dir_p[0] = ptree.good_dir 
+        pe_p[0]     = ptree.pe 
+        closestPMT_p[0]  = ptree.closestPMT
+        n9_p[0]  = ptree.n9
 
-            dtree.GetEntry(pairnum)
-            nhit_d[0]     = dtree.nhit 
-            x_d[0]       = dtree.x
-            y_d[0]        = dtree.y
-            z_d[0]      = dtree.z
-            posr_d[0]        = eu.radius(x_d[0],y_d[0],z_d[0])
-            u_d[0]      = dtree.u
-            v_d[0]      = dtree.v 
-            w_d[0]      = dtree.w 
-            mc_energy_d[0]    = dtree.mc_energy 
-            good_pos_d[0] = dtree.good_pos 
-            good_dir_d[0] = dtree.good_dir 
-            pe_d[0]     = dtree.pe 
-            closestPMT_d[0]  = dtree.closestPMT
-            n9_d[0]  = dtree.n9
+        ntree.GetEntry(pairnum)
+        nhit_d[0]     = ntree.nhit 
+        x_d[0]       = ntree.x
+        y_d[0]        = ntree.y
+        z_d[0]      = ntree.z
+        posr_d[0]        = eu.radius(x_d[0],y_d[0],z_d[0])
+        u_d[0]      = ntree.u
+        v_d[0]      = ntree.v 
+        w_d[0]      = ntree.w 
+        mc_energy_d[0]    = ntree.mc_energy 
+        good_pos_d[0] = ntree.good_pos 
+        good_dir_d[0] = ntree.good_dir 
+        pe_d[0]     = ntree.pe 
+        closestPMT_d[0]  = ntree.closestPMT
+        n9_d[0]  = ntree.n9
 
-            #TODO: NEED TO SHOOT FOR THE INTEREVENT_DIST AND TIME 
-            interevent_dist[0] = -1
-            #Check for intereventdist cut and fill in interevent dist
-            if INTERDIST is not None:
-                if float(interevent_dist[0]) > float(INTERDIST):
-                    continue
+        #TODO: NEED TO SHOOT FOR THE INTEREVENT_DIST AND TIME 
+        interevent_dist[0] = -1
+        #Check for intereventdist cut and fill in interevent dist
+        if INTERDIST is not None:
+            if float(interevent_dist[0]) > float(INTERDIST):
+                continue
+        if USEITID is True:
+            interevent_time[0] = timefit.GetRandom()
+        else:
             interevent_time[0] = -1
-            pair_number[0] = pairnum
-            t_root.Fill()
-            pairnum+=1
+        pair_number[0] = pairnum
+        t_root.Fill()
+        pairnum+=1
     allpairnum[0] = pairnum
     m_root.Fill()
     f_root.cd()
