@@ -41,14 +41,16 @@ parser.add_argument('--posrcut', dest='RADIUSCUT', action='store',
         help='Only consider IBD candidates with an interevent distance <= input.')
 parser.add_argument('--datadir', dest='DATADIR', action='store',
         help="Points to data directory with positron and neutron files")
-parser.add_argument('--ITID', dest='USEITID', action='store_true',
-        help="Will use data in DATADIR/ITID/ to shoot interevent times")
+parser.add_argument('--ITID', dest='USEITID', action='store',
+        help="Will use data in directory string given to shoot interevent times")
 parser.add_argument('--output','-o', dest='OUTFILE', action='store',
         help="Provide the name desired for the output root file")
 
+dd='/p/lscratche/adg/Watchboy/simplifiedData/rp_sim/dec2017/pass2_root_files_tankRadius_10000.000000_halfHeight_10000.000000_shieldThickness_1500.000000_U238_PPM_0.341000_Th232_PPM_1.330000_Rn222_0.001400'
+ditid='/p/lscratche/adg/Watchboy/simplifiedData/rp_sim/dec2017/IT_ID_Maker'
 parser.set_defaults(DEBUG=False, TIMETHRESH=1.5E5, 
-        INTERDIST=None, RADIUSCUT=None,ZCUT=None,DATADIR=None,
-        PHOTOCOVERAGE='25pct',OUTFILE='output.root',USEITID=False)
+        INTERDIST=None, RADIUSCUT=None,ZCUT=None,DATADIR=dd,
+        PHOTOCOVERAGE='25pct',OUTFILE='output.root',USEITID=ditid)
 args = parser.parse_args()
 
 DEBUG = args.DEBUG
@@ -95,24 +97,27 @@ neutron_eff_validfits = rr.GetPromptEff(neutron_file)
 file_entrynums = np.zeros(len(event_types))
 
 #We'll shoot interevent distances and times here
-ITID_filenames = glob.glob(ANALYZEDIR+"/ITID/*.root")
+ITID_filenames = glob.glob(USEITID+"/ITID/*.root")
+
+if DEBUG is True:
+    print("ITID FILES: " + str(ITID_filenames))
  
 if DEBUG is True:
-    print("PROMPT EFFICIENCY: " + str(prompt_eff_validfits))
-    print("DELAYED EFFICIENCY: " + str(del_eff_validfits))
+    print("PROMPT EFFICIENCY: " + str(positron_eff_validfits))
+    print("DELAYED EFFICIENCY: " + str(neutron_eff_validfits))
 
 if __name__ == '__main__':
     #Shoot the interevent_time histogram first
-    if USEITID is True:
+    if USEITID is not None:
         if DEBUG is True:
             print("Using data in DATADIR/ITID to shoot interevent_times")
         timehistogram = itd.MakeTimeHist(ITID_filenames,TIMETHRESH)
-        timefit = itd.MakeTimeFit_wald(timehistogram)
+        timefit = itd.MakeTimeFit_wald(timehistogram,TIMETHRESH)
         if DEBUG is True:
             print("Finished fit to times in ITID data.  Showing fits...")
             timehistogram.Draw()
-            timefit.Draw("same")
-            time.sleep(5)
+            timefit.Draw()
+            time.sleep(20)
     
 
     if DEBUG is True:
