@@ -1,0 +1,31 @@
+{
+    "methods": [
+        "method1": {
+            "name": "Cuts",
+            "type": "kCuts"
+        },
+        "method2": {
+            "name": "BDT",
+            "type": "kBDT"
+    ],
+    "variables": [
+        "var1": {
+            "v": "n9",
+            "title": "n9 classifier",
+            "units": "no units",
+            "type": 'F'
+        },
+        "var2": {
+            "v": "good_pos",
+            "title": "position fit goodness",
+            "units": "no units"
+        }
+    ],
+    "spectators": {
+        "var1": {
+            "v": "pon := pe/nhit",
+            "title": "PE over nhit",
+            "units": "no units"
+        }
+    }
+

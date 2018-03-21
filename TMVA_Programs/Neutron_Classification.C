@@ -47,7 +47,7 @@
 #include "TMVA/Tools.h"
 #endif
 
-void IBD_Classification( TString myMethodList = "" )
+void Neutron_Classification( TString myMethodList = "" )
 {
    // The explicit loading of the shared libTMVA is done in TMVAlogon.C, defined in .rootrc
    // if you use your private .rootrc, or run from a different directory, please copy the
@@ -124,7 +124,7 @@ void IBD_Classification( TString myMethodList = "" )
    Use["SVM"]             = 0;
    // 
    // --- Boosted Decision Trees
-   Use["BDT"]             = 0; // uses Adaptive Boost
+   Use["BDT"]             = 1; // uses Adaptive Boost
    Use["BDTG"]            = 0; // uses Gradient Boost
    Use["BDTB"]            = 0; // uses Bagging
    Use["BDTD"]            = 0; // decorrelation + Adaptive Boost
@@ -160,7 +160,7 @@ void IBD_Classification( TString myMethodList = "" )
    // --- Here the preparation phase begins
 
    // Create a ROOT output file where TMVA will store ntuples, histograms, etc.
-   TString outfileName( "TMVA_IBDC.root" );
+   TString outfileName( "TMVA_NEUTRONC_2500.root" );
    TFile* outputFile = TFile::Open( outfileName, "RECREATE" );
 
    // Create the factory object. 
@@ -173,41 +173,35 @@ void IBD_Classification( TString myMethodList = "" )
 
    // Define the input variables that shall be used for the MVA training
    // note that you may also use variable expressions, such as: "3*var1/var2*abs(var3)"
-   factory->AddVariable( "interevent_dist_fv", "interevent distance","mm",'F' );
-   factory->AddVariable( "interevent_time", "interevent time","ns", 'F' );
-   factory->AddVariable( "D_ITR := n9/nhit", "delayed in time ratio", "no units", 'F' );
-   factory->AddVariable( "P_ITR := n9_prev/nhit_prev", "prompt in-time ratio", "no units", 'F' );
-   factory->AddVariable( "good_pos", "delayed position fit goodness", "no units", 'F' );
-   factory->AddVariable( "good_pos_prev", "prompt position fit goodness", "no units", 'F' );
-   factory->AddVariable( "good_dir", "delayed direction fit goodness", "no units", 'F' );
+   factory->AddVariable( "n9", "n9 classifier", "no units", 'F' );
+   factory->AddVariable( "good_pos", "position fit goodness", "no units", 'F' );
+   factory->AddVariable( "good_dir", "direction fit goodness", "no units", 'F' );
+   factory->AddVariable( "closestPMT", "distance to closest PMT from event vertex", "m", 'F' );
 
-   factory->AddVariable( "good_dir_prev", "prompt direction fit goodness", "no units", 'F' );
-   factory->AddVariable( "z", "Z position of delayed event in detector", "m", 'F' );
-   factory->AddVariable( "z_prev", "Z position of prompt event in detector", "m", 'F' );
-   factory->AddVariable( "r", "Radial position of delayed event in detector", "m", 'F' );
-   factory->AddVariable( "r_prev", "Radial position of prompt event in detector", "m", 'F' );
-   factory->AddVariable( "pe", "delayed P.E. count", "PE", 'F' );
-   factory->AddVariable( "pe_prev", "prompt P.E. count", "PE", 'F' );
+   factory->AddVariable( "pon := pe/nhit", "P.E. over nhit", "PE/hit", 'F' );
 
    // You can add so-called "Spectator variables", which are not used in the MVA training,
    // but will appear in the final "TestTree" produced by TMVA. 
    //factory->AddSpectator( "n9",  "n9", "nhit", 'F' );
+   factory->AddSpectator( "abz := abs(z)", "Distance from center on z-axis", "m", 'F' );
+   factory->AddSpectator( "r", "Radial position of event in detector", "m", 'F' );
 
-   // Read training and test data
-   TString fname = "./IBD_ACC_SB.root";
-   
+   TString fname_sig = "./IBD_Events.root";
+   TSTring fname_bkg = "./Accidentals.root";
    if (gSystem->AccessPathName( fname ))  // file does not exist in local directory
       cout << "AAAH, YOUR FILE DOES NOT EXISTTTT" << endl;
 
-   TFile *input = TFile::Open( fname );
-   
-   std::cout << "--- TMVAClassification       : Using input file: " << input->GetName() << std::endl;
-   
+   TFile *input_signal = TFile::Open( fname_sig );
+   TFile *input_bkg = TFile::Open( fname_bkg );
+
+   std::cout << "--- TMVAClassification       : Using input signal file: " << input_sig->GetName() << std::endl;
+   std::cout << "--- TMVAClassification       : Using input background file: " << input_bkg->GetName() << std::endl;
+  
    // --- Register the training and test trees
 
-   TTree *signal     = (TTree*)input->Get("signal");
-   TTree *background = (TTree*)input->Get("background");
-   
+   TTree *signal     = (TTree*)input_signal->Get("Output");
+   TTree *background = (TTree*)input_bkg->Get("Output");
+  
    // global event weights per tree (see below for setting event-wise weights)
    Double_t signalWeight     = 1.0;
    Double_t backgroundWeight = 1.0;
@@ -229,8 +223,9 @@ void IBD_Classification( TString myMethodList = "" )
    //factory->SetBackgroundWeightExpression( "weight" );
 
    // Apply additional cuts on the signal and background samples (can be different)
-   TCut mycuts = "dir_goodness > 0.1 && dir_goodness_prev > 0.1 && interevent_time<150000"; // for example: TCut mycuts = "abs(var1)<0.5 && abs(var2-0.5)<1";
-   TCut mycutb = "dir_goodness > 0.1 && dir_goodness_prev > 0.1"; // for example: TCut mycutb = "abs(var1)<0.5";
+   //TCut mycuts = "dir_goodness > 0.1 && dir_goodness_prev > 0.1";
+   //TCut mycutb = "dir_goodness > 0.1 && dir_goodness_prev > 0.1";
+   TCut mycuts = "";
 
    // Tell the factory how to use the training and testing events
    //
@@ -240,19 +235,18 @@ void IBD_Classification( TString myMethodList = "" )
    // To also specify the number of testing events, use:
    //  factory->PrepareTrainingAndTestTree( mycuts,
    //                                         "NSigTrain=2500:NBkgTrain=2500:NSigTest=20000:NBkgTest=2500:SplitMode=Random:!V" );
-   factory->PrepareTrainingAndTestTree( mycuts, mycutb,
-                                        "nTrain_Signal=15000:nTrain_Background=15000:nTest_Signal=5000:nTest_Background=5000:SplitMode=Random:NormMode=NumEvents:!V" );
+   factory->PrepareTrainingAndTestTree(mycuts, "nTrain_Signal=120000:nTrain_Background=600000:nTest_Signal=30000:nTest_Background=100000:SplitMode=Random:NormMode=NumEvents:!V" );
 
    // ---- Book MVA methods
    //
    // Cut optimisation
    if (Use["Cuts"])
       factory->BookMethod( TMVA::Types::kCuts, "Cuts",
-                           "!H:!V:FitMethod=MC:EffSel:SampleSize=10000000:VarProp=FSmart" );
+                           "!H:!V:FitMethod=MC:EffSel:SampleSize=200000:VarProp=FSmart" );
 
    if (Use["CutsD"])
       factory->BookMethod( TMVA::Types::kCuts, "CutsD",
-                           "!H:!V:FitMethod=MC:EffSel:SampleSize=1000000:VarProp=FSmart:VarTransform=Decorrelate" );
+                           "!H:!V:FitMethod=MC:EffSel:SampleSize=100000:VarProp=FSmart:VarTransform=Decorrelate" );
 
    if (Use["CutsPCA"])
       factory->BookMethod( TMVA::Types::kCuts, "CutsPCA",
