@@ -3,14 +3,6 @@ import ROOT as ROOT
 from ROOT import TChain, TFile, gROOT
 from sys import stdout
 
-def isFiducial(FVr, FVz, x1, y1, z1):
-    #Function checks that both events are within the defined fiducial volume.
-    r1 = np.sqrt(x1**2 + y1**2)
-    if (r1 > FVr) or (abs(z1) > FVz):
-        return False
-    else:
-        return True
-
 def shootTimeDiff(rate):
     #Given an average rate in Hz, shoot from an exponential distribution for the
     #Time to next event.  Return time in nanoseconds.
@@ -41,21 +33,10 @@ def shootTimeDiff_Slow(raw_freq):
             timediff+=1
     return timediff * 1.0E6 * scaler
 
-#FIXME: need a version that takes in x, y, and z, and does this
+def radius(x,y):
+    return np.sqrt(x**2 + y**2)
 
 def innerDist(prev_x, prev_y, prev_z, x, y, z):
     return np.sqrt((prev_x - x)**2 + (prev_y - y)**2 + (prev_z - z)**2)
 
-def innerDist_rz(prev_r, prev_z, r, z, posReco, posReco_prev):
-    #First checks that the current and previous event reconstruct in the
-    #FV.  If they do, returns the inner_dist_fv
-    if (0< abs(prev_r) < FV_radius) and (0 < abs(r) < FV_radius):
-        if (0 < abs(prev_z) < (FV_height/2.)) and (0 < abs(z) < (FV_height / 2.)):
-            return np.sqrt((posReco_prev.x() - posReco.x())**2 + 
-                    (posReco_prev.y() - posReco.y())**2 + 
-                    (posReco_prev.z() - posReco.z())**2)
-        else:
-            return -1
-    else:
-        return -1
 

@@ -5,14 +5,15 @@ import os,sys
 #Let's make ourselves a simple TMVA factory in python.
 
 class TMVARunner(object):
-    def __init__(self, sfile=None, bfile=None, mdict=None):
+    def __init__(self, sfile=None, bfile=None, mdict=None, vdict=None):
         '''
-        This class takes in a signal file, background file, and method
-        dictionary and runs ROOT's TMVA classifiers.
+        This class takes in a signal file, background file, method
+        dictionary, and variable dictionary and runs ROOT's TMVA classifiers.
         '''
         self.sfile = sfile
         self.bfile = bfile
         self.mdict = mdict
+        self.vdict = vdict
 
         #weights for signal and background
         self.sw = 1.0
@@ -52,6 +53,8 @@ class TMVARunner(object):
         '''Load the resultfile with the TMVA Gui'''
         #gROOT.SetMacroPath(Use os.path to fill in where the macrow will be)
         #gROOT.ProcessLine(".L TMVAGui.C")
+
+    def loadVariables(self, factory):
 
     def RunTMVA(self,outfile='TMVA_output.root'):
         '''Runs the TMVA with the given settings.'''

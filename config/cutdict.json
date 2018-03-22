@@ -1,0 +1,11 @@
+{
+    "singles": {
+        "good_pos": 0.1, 
+        "n9": 5, 
+        "nhit": 3
+    },
+    "pairs": {
+        "interevent_dist": None,
+        "interevent_time": None,
+    }
+}
