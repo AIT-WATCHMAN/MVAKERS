@@ -24,7 +24,7 @@ from sys import argv
 from decimal import *
 
    
-def getBackgroundSingles(cutdict=None,rootfiles=[],outfile="signal_output.root",datatree='data',max_entries=9E15):
+def getSignalSingles(cutdict=None,rootfiles=[],outfile="signal_output.root",datatree='data',max_entries=9E15):
     #For a given list of rootfiles, just TChain it up. 
     rfiles = []
     for f in rootfiles:
