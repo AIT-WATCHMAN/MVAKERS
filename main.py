@@ -1,4 +1,5 @@
 import lib.argparser as ap
+import lib.dbutils as du
 import lib.make_signal_singles as ss
 import lib.make_signal_pairs as sp
 import lib.make_background_singles as bs
@@ -6,8 +7,11 @@ import lib.make_background_pairs as bp
 import time
 import json
 
-args = ap.args
+basepath = os.path.dirname(__file__)
+configpath = os.path.abspath(os.path.join(basepath,"config"))
 
+
+args = ap.args
 DEBUG = args.DEBUG
 TIMETHRESH=args.TIMETHRESH
 INTERDIST=args.INTERDIST
@@ -41,6 +45,8 @@ if __name__ == '__main__':
         bkgrootfiles=[]
         for btype in Bkg_types:
             bkgrootfiles += glob.glob("%s/%s/*%s.root" % (DATADIR,PC,btype))
+        if DEBUG is True:
+            print("BKGFILES BEING USED: " + str(bkgrootfiles))
         if len(bkgrootfiles) == 0:
             print("NO BACKGROUND FILES FOUND.  EXITING")
             sys.exit(1)
@@ -53,6 +59,9 @@ if __name__ == '__main__':
         if SINGLES is not None:
             print("GETTING SINGLES SIGNAL FILE OF TYPE %s" % (SINGLES))
             sigrootfiles += glob.glob("%s/%s/*%s.root" % (DATADIR,PC,SINGLES))
+
+        if DEBUG is True:
+            print("SIGNAL FILES BEING USED: " + str(sigrootfiles))
         if len(bkgrootfiles) == 0:
             print("NO SIGNAL FILES FOUND.  EXITING")
         print("SIGNAL FILES ACQUIRED.")
@@ -71,5 +80,22 @@ if __name__ == '__main__':
             sfile = sp.getSignalPairs(rootfiles=sigrootfiles,outfile=sout)
             bfile = bp.getBackgroundPairs(rootfiles=bkgrootfiles,outfile=bout)
         print("SIGNAL AND OUTPUT FILES SAVED TO %s" % OUTDIR)
+
     if RUNTMVA is True:
+        print("LOADING VARIABLES TO USE AS DEFINED IN CONFIG DIR")
+            with open("%s/%s" % (configpath,"variables.json"),"r") as f:
+                varstouse = json.load(f)
+            with open("%s/%s" % (dbpath,"WATCHMAKERS_variables.json"),"r") as f:
+                variable_db = json.load(f)
+            vardict = du.loadVariableDescriptions(varstouse["variables"],
+                        variable_db)
+
+        print("LOADING METHODS TO USE AS DEFINED IN CONFIG DIR")
+        with open("%s/%s" % (configpath,"methods,json"),"r") as f:
+            methoddict = json.load(f)
+        
+        if DEBUG is True:
+            print("VARIABLES BEING FED IN TO MVA: " + str(vardict))
+            print("METHODS BEING FED IN TO MVA: " + str(methoddict))
+        
         print("RUNNING TMVA ON SIGNAL AND BACKGROUND FILES NOW...")

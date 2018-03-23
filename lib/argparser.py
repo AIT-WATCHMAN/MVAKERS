@@ -3,7 +3,8 @@ import argparse
 
 import os
 
-#TODO: Have OUTDIR default to pointing at output/results_JOBNUM
+basepath = os.path.dirname(__fiile__)
+defaultout = os.path.apspath(os.path.join(basepath,"..","output")
 
 parser = argparse.ArgumentParser(description='Parser for WATCHMAKERS Multivariate Analysis Tools')
 parser.add_argument('--debug', dest='DEBUG',action='store_true', type=bool,
@@ -11,8 +12,8 @@ parser.add_argument('--debug', dest='DEBUG',action='store_true', type=bool,
 parser.add_argument('--jobnum', dest='JNUM', action='store', type=str,
         help='Specify the job number; will have results save in output/results_JNUM')
 arser.add_argument('--outdir', dest='OUTDIR', action='store', type=str,
-        help='Specify the output directory to save signal and background roots'+\
-                'as well as the TMVA results')
+        help='Specify the output directory to save the results_JNUM directory'+\
+                'into (will have SBbuild files and MVA results')
 parser.add_argument('--pc', dest='PHOTOCOVERAGE', action='store', type=str,
         help="Specify the photocoverage directory you want to read from"+\
                 "(FORMAT: 'Npct' for N percent photocoverage)")
@@ -42,9 +43,10 @@ parser.add_argument('--rcut', dest='RADIUSCUT', action='store', type=float,
 parser.add_argument('--noMVA', dest='RUNTMVA', action='store_false', type=bool,
         help='Give this flag if you only want to build signal/background files'+\
                 'and exit afterwards.')
+
 parser.set_defaults(DEBUG=False,JNUM=0, TIMETHRESH=5.0E5, BUILD=False,
         INTERDIST=None, RADIUSCUT=None,ZCUT=None,DATADIR=None,
-        PHOTOCOVERAGE='25pct',RUNTMVA=True)
+        PHOTOCOVERAGE='25pct',RUNTMVA=True,OUTDIR=defaultaout)
 
 
 def checkParserInput(argin):
@@ -55,7 +57,7 @@ def checkParserInput(argin):
         if os.path.isdir(argin.DATADIR) is False:
             print("The Data directory input does not exist.  Exiting")
             sys.exit(1)
-        if os.path.isdir("%s/%s/" % (argin.DATADIR, argin.PHOTOCOVERAGE)):
+        if os.path.isdir("%s/%s/" % (argin.DATADIR, argin.PHOTOCOVERAGE)) is False:
             print("Photocoverage selected was not available in input data directory."+\
                 "exiting")
             sys.exit(1)

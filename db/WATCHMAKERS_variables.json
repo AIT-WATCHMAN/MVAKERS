@@ -1,0 +1,42 @@
+{
+   "n9": {
+        "title": "n9 classifier",
+        "units": "no units",
+        "type": 'F'
+    },
+    "closestPMT": {
+        "title": "distance to closest PMT from vertex",
+        "units": "meters",
+        "type": 'F'
+    },
+    "nhit": {
+        "title": "number of PMTs hit",
+        "units": "no units",
+        "type": 'F'
+    },
+    "pe": {
+        "title": "photoelectron count",
+        "units": "no units",
+        "type": 'F'
+    },
+    "good_dir": {
+        "title": "direction fit goodness",
+        "units": "no units",
+        "type": 'F'
+    },
+    "good_pos": {
+        "title": "position fit goodness",
+        "units": "no units",
+        "type": 'F'
+    }
+    "interevent_time": {
+        "title": "interevent time of IBD candidate",
+        "units": "ns",
+        "type": 'F'
+    }
+    "interevent_dist": {
+        "title": "interevent distance of IBD candidate",
+        "units": "meters",
+        "type": 'F'
+    }
+}
