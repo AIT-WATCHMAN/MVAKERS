@@ -24,7 +24,7 @@ import utils.summary_tree as st
 
 
 
-def makeSignalIBDPairs(cutdict=None, rootfiles=[], datatree="data",max_entries=9E15):
+def getSignalPairs(cutdict=None, rootfiles=[], outfile='signalout.root',datatree="data",max_entries=9E15):
     '''
     Given a cut dictionary and list of rootfiles, this function
     returns a single root file ready for passing to the TMVA Factory in
@@ -43,7 +43,7 @@ def makeSignalIBDPairs(cutdict=None, rootfiles=[], datatree="data",max_entries=9
     good_pos_p = np.zeros(1,dtype=float64)
     good_dir_p = np.zeros(1,dtype=float64)
     pe_p     = np.zeros(1,dtype=int)
-    posr_p      = np.zeros(1,dtype=float64)
+    r_p      = np.zeros(1,dtype=float64)
     closestPMT_p    = np.zeros(1,dtype=float64)
     n9_p       = np.zeros(1,dtype=float64)
 
@@ -58,7 +58,7 @@ def makeSignalIBDPairs(cutdict=None, rootfiles=[], datatree="data",max_entries=9
     good_pos_d = np.zeros(1,dtype=float64)
     good_dir_d = np.zeros(1,dtype=float64)
     pe_d     = np.zeros(1,dtype=int)
-    posr_d      = np.zeros(1,dtype=float64)
+    r_d      = np.zeros(1,dtype=float64)
     closestPMT_d    = np.zeros(1,dtype=float64)
     n9_d       = np.zeros(1,dtype=float64)
 
@@ -81,26 +81,13 @@ def makeSignalIBDPairs(cutdict=None, rootfiles=[], datatree="data",max_entries=9
 
     sum_tree = st.fillSumWithCuts(sum_tree,cutdict)
 
-    for cut in cutdict:
-        if cut=="interevent_dist" and cutdict[cut] is not None:
-            interdistcut = np.zeros(1,dtype=float64)
-            sum_tree.Branch('interdistcut', interdistcut, 'interdistcut/D')
-            interdistcut[0] = cutdict[cut]
-        if cut=="posr" and cutdict[cut] is not None:
-            posrcut = np.zeros(1,dtype=float64)
-            sum_tree.Branch('posrcut', posrcut, 'posrcut/D')
-            posrcut[0] = cutdict[cut]
-        if cut=="z" and cutdict[cut] is not None::
-            poszcut = np.zeros(1,dtype=float64)
-            sum_tree.Branch('zcut',zcut, 'zcut/D')
-            zcut[0] = cutdict[cut]
 
     #Initialize the output root's branches
     t_root = ROOT.TTree("Output","Combined reactor positron and neutrons from MC")
     t_root.Branch('z_p',      z_p,   'z_p/D')
     t_root.Branch('y_p',      y_p,   'y_p/D')
     t_root.Branch('x_p',      x_p,   'x_p/D')
-    t_root.Branch('posr_p',      posr_p,   'posr_p/D')
+    t_root.Branch('r_p',      r_p,   'r_p/D')
     t_root.Branch('w_p',      w_p,   'w_p/D')
     t_root.Branch('v_p',      v_p,   'v_p/D')
     t_root.Branch('u_p',      u_p,   'u_p/D')
@@ -115,7 +102,7 @@ def makeSignalIBDPairs(cutdict=None, rootfiles=[], datatree="data",max_entries=9
     t_root.Branch('z_d',      z_d,   'z_d/D')
     t_root.Branch('y_d',      y_d,   'y_d/D')
     t_root.Branch('x_d',      x_d,   'x_d/D')
-    t_root.Branch('posr_d',      posr_d,   'posr_d/D')
+    t_root.Branch('r_d',      r_d,   'r_d/D')
     t_root.Branch('w_d',      w_d,   'w_d/D')
     t_root.Branch('v_d',      v_d,   'v_d/D')
     t_root.Branch('u_d',      u_d,   'u_d/D')
@@ -155,7 +142,7 @@ def makeSignalIBDPairs(cutdict=None, rootfiles=[], datatree="data",max_entries=9
                 break
             dtree.GetEntry(entrynum)
             #Check if this passes prompt cutdict
-            if "singles" in cutdict:
+            if cutdict is not None and "singles" in cutdict:
                 scuts = cutdict["singles"]
                 for cut in scuts:
                     if scuts[cut] is not None and scuts[cut] > getattr(dtree,cut):
@@ -174,7 +161,7 @@ def makeSignalIBDPairs(cutdict=None, rootfiles=[], datatree="data",max_entries=9
                 x_p[0]       = dtree.x
                 y_p[0]        = dtree.y
                 z_p[0]      = dtree.z
-                posr_p[0]        = eu.radius(x_p[0],y_p[0],z_p[0])
+                r_p[0]        = eu.radius(x_p[0],y_p[0])
                 u_p[0]      = dtree.u
                 v_p[0]      = dtree.v 
                 w_p[0]      = dtree.w 
@@ -203,7 +190,7 @@ def makeSignalIBDPairs(cutdict=None, rootfiles=[], datatree="data",max_entries=9
                 x_d[0]       = dtree.x
                 y_d[0]        = dtree.y
                 z_d[0]      = dtree.z
-                posr_d[0]        = eu.radius(x_d[0],y_d[0],z_d[0])
+                r_d[0]        = eu.radius(x_d[0],y_d[0])
                 u_d[0]      = dtree.u
                 v_d[0]      = dtree.v 
                 w_d[0]      = dtree.w 
@@ -235,7 +222,7 @@ def makeSignalIBDPairs(cutdict=None, rootfiles=[], datatree="data",max_entries=9
 
             itid_dict = {"interevent_dist": interevent_dist[0], \
                     "interevent_time": interevent_time[0]}
-            if "pairs" in cutdict:
+            if cutdict is not None and "pairs" in cutdict:
                 pcuts = cutdict["pairs"]
                 for cut in pcuts:
                     if pcuts[cut] is not None and \

@@ -1,7 +1,4 @@
 {
-    "variables": [
-        "n9",
-        "nhit",
-        "interevent_dist"
-    ]
+    "variables": ["n9","nhit","interevent_dist"],
+    "spectators": ["x","y"]
 }

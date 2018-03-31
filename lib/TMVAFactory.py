@@ -1,19 +1,25 @@
 import ROOT
 from ROOT import gROOT
 import os,sys
+import utils.dbutils as du
 
 #Let's make ourselves a simple TMVA factory in python.
+#FIXME: We should make a class with the main calls, but a subclass where
+#The pair cases have the prompt and delayed "_p" and "_d" attached to the
+#variables.
 
 class TMVARunner(object):
-    def __init__(self, sfile=None, bfile=None, mdict=None, vdict=None):
+    def __init__(self, signalfile=None, backgroundfile=None, mdict=None, 
+            sdict=None,vdict=None):
         '''
         This class takes in a signal file, background file, method
         dictionary, and variable dictionary and runs ROOT's TMVA classifiers.
         '''
-        self.sfile = sfile
-        self.bfile = bfile
+        self.sfile = signalfile
+        self.bfile = backgroundfile
         self.mdict = mdict
         self.vdict = vdict
+        self.sdict = sdict
 
         #weights for signal and background
         self.sw = 1.0
@@ -45,18 +51,31 @@ class TMVARunner(object):
         '''Delete all cuts to be fed to the TMVA factory'''
         self.cuts=""
 
-    def loadBkgFile(self,sf):
+    def loadBkgFile(self,bf):
         '''load a new signal file to run the TMVA with.'''
-        self.sfile = sf
+        self.bfile = bf
 
     def loadResultsInGui(self,resultfile):
         '''Load the resultfile with the TMVA Gui'''
         #gROOT.SetMacroPath(Use os.path to fill in where the macrow will be)
         #gROOT.ProcessLine(".L TMVAGui.C")
 
-    def loadVariables(self, factory):
+    def addPairVars(self, factory, var, vardict):
+        factory.AddVariable("%s_p"%str(var),str(vardict[var]["title"]),
+                str(vardict[var]["units"]))
+        factory.AddVariable("%s_d"%str(var),str(vardict[var]["title"]),
+                str(vardict[var]["units"]))
+        return factory
 
-    def RunTMVA(self,outfile='TMVA_output.root'):
+    def addPairSpecs(self, factory, var, vardict):
+        print("ADDIND SPECTATOR " + str(var))
+        factory.AddSpectator("%s_p"%str(var),str(vardict[var]["title"]),
+                str(vardict[var]["units"]))
+        factory.AddSpectator("%s_d"%str(var),str(vardict[var]["title"]),
+                str(vardict[var]["units"]))
+        return factory
+
+    def RunTMVA(self,outfile='TMVA_output.root',pairs=True):
         '''Runs the TMVA with the given settings.'''
 
         #TODO: Check if we actually need this...
@@ -69,10 +88,20 @@ class TMVARunner(object):
                 "!V:!Silent:Color:DrawProgressBar:Transformations"+\
                 "=I;D;P;G;D:AnalysisType=Classification")
 
-        for var in self.mdict["variables"]:
-            factory.AddVariable(var["name"],var["title"],var["units"],var["type"])
-        for spe in self.mdict["spectators"]:
-            factory.AddSpectator(spe["name"],spe["title"],spe["units"],spe["type"])
+        print(self.vdict)
+        for var in self.vdict:
+            if pairs is True and var not in ["interevent_time","interevent_dist"]:
+                factory = self.addPairVars(factory, var,self.vdict)
+            else:
+                factory.AddVariable(str(var),str(self.vdict[var]["title"]),
+                        str(self.vdict[var]["units"]))
+        if self.sdict is not None:
+            for spe in self.sdict:
+                if pairs is True and spe not in ["interevent_time","interevent_dist"]:
+                    factory = self.addPairSpecs(factory, spe, self.sdict)
+                else:
+                    factory.AddSpectator(str(spe),
+                            str(self.sdict[spe]["title"]),str(self.sdict[spe]["units"]))
         #Add signal and background info. to factory
         sigfile = ROOT.TFile(self.sfile,"READ")
         bkgfile = ROOT.TFile(self.bfile,"READ")
@@ -82,20 +111,23 @@ class TMVARunner(object):
         factory.AddBackgroundTree(background, self.bw)
 
         #Now, we book our methods to use in the TMVA.
-        for method in self.mdict["methods"]:
+        print("BOOKING METHODS...")
+        for method in self.mdict:
             #FIXME: Have a nice parser class for making these strings
-            if method["type"] == "kCuts":
+            if self.mdict[method]["type"] == "kCuts":
                 specs = "!H:!V:FitMethod=MC:EffSel:SampleSize=200000:VarProp=FSmart"
-            elif method["type"] == "kBDT":
+            elif self.mdict[method]["type"] == "kBDT":
                 specs = "!H:!V:NTrees=1000:MinNodeSize=2.5%:MaxDepth=3:"+\
                         "BoostType=AdaBoost:AdaBoostBeta=0.5:UseBaggedBoost:"+\
                         "BaggedSampleFraction=0.5:SeparationType=GiniIndex:"+\
                         "ncuts=20"
             else:
-                print("Method %s not supported in this class yet." % (method["type"])
+                print("Method %s not supported in this class yet." % (self.mdict[method]["type"]))
                 continue
-            factory.BookMethod(getattr(ROOT.TMVA.Types,method["type"]),\
-                   specs)
+            print("BOOKING..." + str(self.mdict[method]["type"]))
+            print("METHOD IS " + str(method))
+            factory.BookMethod(getattr(ROOT.TMVA.Types,
+                str(self.mdict[method]["type"])),str(method),specs)
 
         factory.TrainAllMethods() #Train MVAs with training events
         factory.TestAllMethods() #Evaluate all MVAS with set of test events

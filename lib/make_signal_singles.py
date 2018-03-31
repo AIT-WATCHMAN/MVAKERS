@@ -25,10 +25,9 @@ from decimal import *
 
    
 def getSignalSingles(cutdict=None,rootfiles=[],outfile="signal_output.root",datatree='data',max_entries=9E15):
-    #For a given list of rootfiles, just TChain it up. 
     rfiles = []
     for f in rootfiles:
-        rfiles.append(ROOT.TFile(f,"read")
+        rfiles.append(ROOT.TFile(f,"read"))
     
     '''Set up variables for root tree'''
     n9_rf        = np.zeros(1,dtype=float64)

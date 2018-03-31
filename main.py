@@ -1,28 +1,44 @@
 import lib.argparser as ap
-import lib.dbutils as du
+import lib.utils.dbutils as du
+import lib.TMVAFactory as tf
 import lib.make_signal_singles as ss
 import lib.make_signal_pairs as sp
 import lib.make_background_singles as bs
 import lib.make_background_pairs as bp
-import time
+import lib.utils.splash as s
+import glob
+import os, sys, time
 import json
 
 basepath = os.path.dirname(__file__)
 configpath = os.path.abspath(os.path.join(basepath,"config"))
-
+dbpath = os.path.abspath(os.path.join(basepath,"db"))
 
 args = ap.args
+
+#args defining what files are used to run what kind of MVA
+BUILD = args.BUILD
+RUNTMVA = args.RUNTMVA
 DEBUG = args.DEBUG
-TIMETHRESH=args.TIMETHRESH
-INTERDIST=args.INTERDIST
-RADIUSCUT=args.RADIUSCUT
-ZCUT=args.ZCUT
 PAIRS=args.PAIRS
 SINGLES=args.SINGLES
 DATADIR=args.DATADIR
 PC=args.PHOTOCOVERAGE
 JNUM=args.JNUM
-OUTDIR=args.OUTDIR+'/results_'+JNUM
+OUTDIR=args.OUTDIR+'/results_%i' % (JNUM)
+
+#Cuts applied if value is not None
+TIMETHRESH=args.TIMETHRESH
+INTERDIST=args.INTERDIST
+RADIUSCUT=args.RADIUSCUT
+ZCUT=args.ZCUT
+
+if not os.path.exists(OUTDIR):
+    os.makedirs(OUTDIR)
+if BUILD is True and os.path.exists(OUTDIR) is True:
+    print("WARNING: YOU ARE BUILDING SIGNAL/BKG FILES TO AN EXISTING DIRECTORY.")
+    print("EXISTANT DATA IN THE DIRECTORY WILL BE DELETED IF YOU PROCEED")
+    time.sleep(3)
 
 #TODO:
 #  - Need to make the OUTDIR that everything will be saved to.
@@ -34,14 +50,23 @@ OUTDIR=args.OUTDIR+'/results_'+JNUM
 #  -
 
 if __name__ == '__main__':
-    print("WELCOME TO THE WATCHMVAKERS ANNEX.")
+    s.splash()
+    
 
+    sout = "%s/signal.root" % (OUTDIR)
+    bout = "%s/background.root" % (OUTDIR)
+    mvaout = "%s/TMVA_output.root" % (OUTDIR)
     if BUILD is True:
         print("------BUILDING SIGNAL AND BACKGROUND FILES------")
         time.sleep(2)
 
+        print("LOADING CUTS TO USE AS DEFINED IN CONFIG DIR")
+        with open("%s/%s" % (configpath,"cuts.json"),"r") as f:
+            cutdict = json.load(f)
+        
         print("GETTING ALL AVAILABLE BACKGROUND FILES FROM DATADIR")
         Bkg_types = ["WV","PMT"]
+        #Bkg_types = ["neutron"]
         bkgrootfiles=[]
         for btype in Bkg_types:
             bkgrootfiles += glob.glob("%s/%s/*%s.root" % (DATADIR,PC,btype))
@@ -70,32 +95,43 @@ if __name__ == '__main__':
         with open(OUTDIR+"/SB_files_used.json","w") as f:
             json.dump(files_used,f,sort_keys=True,indent=4)
 
-        print("PREPARING SIGNAL AND BACKGROUND NTUPLE FILES NOW...")
-        sout = "%s/signal.root" % (OUTDIR)
-        bout = "%s/background.root" % (OUTDIR)
         if SINGLES is not None:
-            sfile = ss.getSignalSingles(rootfiles=sigrootfiles,outfile=sout)
-            bfile = bs.getBackgroundSingles(rootfiles=bkgrootfiles,outfile=bout)
+            print("PREPARING SINGLE SIGNAL NTUPLE FILES NOW...")
+            ss.getSignalSingles(cutdict=cutdict,
+                    rootfiles=sigrootfiles,outfile=sout)
+            print("SIGNAL FILES COMPLETE.  PREPARING SINGLE BKG. NTUPLES...") 
+            bs.getBackgroundSingles(cutdict=cutdict,
+                    rootfiles=bkgrootfiles,outfile=bout)
         if PAIRS is True:
-            sfile = sp.getSignalPairs(rootfiles=sigrootfiles,outfile=sout)
-            bfile = bp.getBackgroundPairs(rootfiles=bkgrootfiles,outfile=bout)
+            print("PREPARING PAIRED SIGNAL NTUPLE FILES NOW...")
+            sp.getSignalPairs(cutdict=cutdict, 
+                    rootfiles=sigrootfiles,outfile=sout,max_entries=100)
+            print("SIGNAL FILES COMPLETE.  PREPAIRING PAIR BKG. NTUPLES...")
+            bp.getBackgroundPairs(cutdict=cutdict,
+                    rootfiles=bkgrootfiles,outfile=bout,max_entries=100)
         print("SIGNAL AND OUTPUT FILES SAVED TO %s" % OUTDIR)
 
     if RUNTMVA is True:
+        #FIXME: Need to get the signal file names in OUTDIR/result_JNUM
         print("LOADING VARIABLES TO USE AS DEFINED IN CONFIG DIR")
-            with open("%s/%s" % (configpath,"variables.json"),"r") as f:
-                varstouse = json.load(f)
-            with open("%s/%s" % (dbpath,"WATCHMAKERS_variables.json"),"r") as f:
-                variable_db = json.load(f)
-            vardict = du.loadVariableDescriptions(varstouse["variables"],
+        with open("%s/%s" % (configpath,"variables.json"),"r") as f:
+            varstouse = json.load(f)
+        with open("%s/%s" % (dbpath,"WATCHMAKERS_variables.json"),"r") as f:
+            variable_db = json.load(f)
+        vardict = du.loadVariableDescriptions(varstouse["variables"],
+                        variable_db)
+        spedict = du.loadVariableDescriptions(varstouse["spectators"],
                         variable_db)
 
+        methoddict = {}
         print("LOADING METHODS TO USE AS DEFINED IN CONFIG DIR")
-        with open("%s/%s" % (configpath,"methods,json"),"r") as f:
+        with open("%s/%s" % (configpath,"methods.json"),"r") as f:
             methoddict = json.load(f)
         
         if DEBUG is True:
             print("VARIABLES BEING FED IN TO MVA: " + str(vardict))
             print("METHODS BEING FED IN TO MVA: " + str(methoddict))
-        
         print("RUNNING TMVA ON SIGNAL AND BACKGROUND FILES NOW...")
+        mvaker = tf.TMVARunner(signalfile=sout, backgroundfile=bout,
+                mdict=methoddict, vdict=vardict,sdict=spedict)
+        mvaker.RunTMVA(outfile=mvaout,pairs=PAIRS)

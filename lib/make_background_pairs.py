@@ -13,6 +13,7 @@ import time
 import numpy as np
 from numpy import *
 
+import sys
 from sys import stdout
 import glob
 
@@ -30,7 +31,7 @@ import utils.RootReader as rr
 import utils.summary_tree as st
 
 
-def __loadNewEvent(buff,VALIDRATE,totaltime):
+def __loadNewEvent(buff,Bkg_rates_validfits,Bkg_entrynums,Bkg_files,VALIDRATE,totaltime):
     '''
     Using the loaded-in background files, shoot the next event's information,
     including file it's in, it's entry number, and the time since last event
@@ -61,17 +62,18 @@ def __deleteOutOfWindow(buff,TIMETHRESH):
     return buff
 
 def __deleteNewestEntry(buff):
-        del buff["times"][len(buff["times"] -1]
-        del buff["files"][len(buff["files"] -1]
-        del buff["entrynums"][len(buff["files"] -1]
+    del buff["times"][len(buff["times"]) -1]
+    del buff["files"][len(buff["files"]) -1]
+    del buff["entrynums"][len(buff["files"]) -1]
     return buff
 
 
-def getBackgroundSingles(cutdict=None,rootfiles=[],outfile="background_output.root",datatree='data',max_entries=9E15):
-    #For a list of given files, 
+def getBackgroundPairs(cutdict=None,rootfiles=[],outfile="background_output.root",datatree='data',max_entries=9E15):
+    #For a list of given files, append the ROOT file object to Bkg_files list 
+    print("ROOTFILES BEING FED IN: " + str(rootfiles)) 
     Bkg_files = []
     for f in rootfiles:
-        rfile = ROOT.TFile(f, "read")
+        rfile = ROOT.TFile(f, "READ")
         Bkg_files.append(rfile)
     
     #Want to shoot the rates of events that could be a prompt candidate.  Only want
@@ -97,7 +99,7 @@ def getBackgroundSingles(cutdict=None,rootfiles=[],outfile="background_output.ro
     pe_p     = np.zeros(1,dtype=int)
     r_p      = np.zeros(1,dtype=float64)
     closestPMT_p    = np.zeros(1,dtype=float64)
-    n9_p       = np.zeros(1,dtype=float64)
+    n9_p       = np.zeros(1,dtype=int)
 
     x_d       = np.zeros(1,dtype=float64)
     y_d        = np.zeros(1,dtype=float64)
@@ -112,7 +114,7 @@ def getBackgroundSingles(cutdict=None,rootfiles=[],outfile="background_output.ro
     pe_d     = np.zeros(1,dtype=int)
     r_d      = np.zeros(1,dtype=float64)
     closestPMT_d    = np.zeros(1,dtype=float64)
-    n9_d       = np.zeros(1,dtype=float64)
+    n9_d       = np.zeros(1,dtype=int)
 
     interevent_dist = np.zeros(1,dtype=float64)
     interevent_time = np.zeros(1,dtype=float64)
@@ -122,11 +124,12 @@ def getBackgroundSingles(cutdict=None,rootfiles=[],outfile="background_output.ro
     #Variables for filling ProcSummary
     allsinglesnum = np.zeros(1,dtype=int)
     raw_rate = np.zeros(1,dtype=float64)
-    validsinglesnum = np.zeros(1,dtype=float64)
+    validsinglesnum = np.zeros(1,dtype=int)
+    validpairnum = np.zeros(1,dtype=int) 
     pvalid_rate = np.zeros(1,dtype=float64)
     total_time = np.zeros(1,dtype=float64)
 
-        '''Open a root file with name of dataType'''
+    '''Open a root file with name of dataType'''
 
     f_root = ROOT.TFile(outfile,"recreate")
     
@@ -134,15 +137,15 @@ def getBackgroundSingles(cutdict=None,rootfiles=[],outfile="background_output.ro
     sum_tree.Branch('raw_rate', raw_rate, 'raw_rate/D')
     sum_tree.Branch('pvalid_rate', pvalid_rate, 'pvalid_rate/D')
     sum_tree.Branch('allsinglesnum', allsinglesnum, 'allsinglesnum/I')
-    sum_tree.Branch('validpairnum', validpairnum, 'validpairnum/D')
-    sum_tree.Branch('validsinglesnum', validsinglesnum, 'validsinglesnum/D')
+    sum_tree.Branch('validpairnum', validpairnum, 'validpairnum/I')
+    sum_tree.Branch('validsinglesnum', validsinglesnum, 'validsinglesnum/I')
     sum_tree.Branch('total_time', total_time, 'total_time/D')
 
     sum_tree = st.fillSumWithCuts(sum_tree,cutdict)
 
     pvalid_rate[0] = VALIDRATE
 
-    t_root = ROOT.TTree("CombinedOutput","Combined Prompt & Delayed candidates from Background MC")
+    t_root = ROOT.TTree("Output","Combined Prompt & Delayed candidates from Background MC")
     t_root.Branch('z_p',      z_p,   'z_p/D')
     t_root.Branch('y_p',      y_p,   'y_p/D')
     t_root.Branch('x_p',      x_p,   'x_p/D')
@@ -156,7 +159,7 @@ def getBackgroundSingles(cutdict=None,rootfiles=[],outfile="background_output.ro
     t_root.Branch("good_dir_p", good_dir_p,   'good_dir_p/D')
     t_root.Branch("pe_p", pe_p,   'pe_p/I')
     t_root.Branch("closestPMT_p", closestPMT_p, "closestPMT_p/D")
-    t_root.Branch("n9_p", n9_p, "n9_p/D")
+    t_root.Branch("n9_p", n9_p, "n9_p/I")
 
     t_root.Branch('z_d',      z_d,   'z_d/D')
     t_root.Branch('y_d',      y_d,   'y_d/D')
@@ -171,7 +174,7 @@ def getBackgroundSingles(cutdict=None,rootfiles=[],outfile="background_output.ro
     t_root.Branch("good_dir_d", good_dir_d,   'good_dir_d/D')
     t_root.Branch("pe_d", pe_d,   'pe_d/I')
     t_root.Branch("closestPMT_d", closestPMT_d, "closestPMT_d/D")
-    t_root.Branch("n9_d", n9_d, "n9_d/D")
+    t_root.Branch("n9_d", n9_d, "n9_d/I")
 
     t_root.Branch('interevent_time', interevent_time,  'interevent_time/D')
     t_root.Branch('interevent_dist', interevent_dist,  'interevent_dist/D')
@@ -188,35 +191,49 @@ def getBackgroundSingles(cutdict=None,rootfiles=[],outfile="background_output.ro
     #Keep track of meta information for calculating efficiencies pre-MVA entry
     pairnum = 0
     entrynum = 0
-    validsinglesnum = 0
+    vsnum = 0
     totaltime = 0.0
-    while (pairnum < MAXPAIRS):
-        if float(pairnum) / 20000.0 == int(pairnum / 20000.0):
-            print("ENTRYNUM: " + str(pairnum))
+    while (pairnum < max_entries):
+        if float(entrynum) / 20000.0 == int(entrynum / 20000.0):
+            print("ENTRYNUM: " + str(entrynum))
 
         #load a new event into our buffer
-        Buffer,totaltime = __loadNewEvent(Buffer,VALIDRATE,totaltime)
+        Buffer,totaltime = __loadNewEvent(Buffer,Bkg_rates_validfits,
+                Bkg_entrynums,Bkg_files,VALIDRATE,totaltime)
         entrynum+=1
-
-        #Check if this passes the input cuts
-        if "singles" in cutdict:
-            for cut in cutdict["singles"]:
-                if cutdict[cut] is not None and \
-                        cutdict[cut] > getattr(DelayedTree,cut):
-                    __deleteNewestEntry(buff)
-                    continue
-        validsinglesnum+=1
-
-        if len(Buffer["entrynums"]) <=1:
-            continue
-
-        #Remove events at start of buffer outside the time width range
-        Buffer = __deleteOutOfWindow(Buffer,cutdict["pairs"]["interevent_time"])
 
         #loop through and match this delayed event with all previous prompts
         delayedindex = len(Buffer["entrynums"]) - 1
         Delayedfile = Buffer["files"][delayedindex]
         Delayedtree = Delayedfile.Get(datatree)
+        Delayedtree.GetEntry(Buffer["entrynums"][delayedindex])
+
+        eventvalid = True
+        #Check if this passes the input cuts
+        if cutdict is not None and "singles" in cutdict:
+            for cut in cutdict["singles"]:
+                if cutdict["singles"][cut] is not None and \
+                        cutdict["singles"][cut] > getattr(Delayedtree,cut):
+                    print("FAILED AT"+cut+"withval "+str(getattr(Delayedtree,cut)))
+                    eventvalid=False
+                    break
+        if eventvalid is False:
+            __deleteNewestEntry(Buffer)
+            continue
+        print(Buffer)
+        #event is valid for given singles cuts
+        vsnum+=1
+
+        if len(Buffer["entrynums"]) <=1:
+            continue
+
+        #Remove events at start of buffer outside the time width range
+        try:
+            Buffer = __deleteOutOfWindow(Buffer,cutdict["pairs"]["interevent_time"])
+        except KeyError:
+            print("interevent_time separation not defined.  Means we have no pair")
+            print("window.  Define and interevent_time and run again.")
+            sys.exit(1)
 	#Check if we've exhausted a MC file's data yet
         if Buffer["entrynums"][len(Buffer["entrynums"])-1] == \
                 Delayedtree.GetEntries():
@@ -266,7 +283,7 @@ def getBackgroundSingles(cutdict=None,rootfiles=[],outfile="background_output.ro
             interevent_time[0] = sum(Buffer["times"][i+1:delayedindex+1])
             itid_dict = {"interevent_dist": interevent_dist[0], \
                     "interevent_time": interevent_time[0]}
-            if "pairs" in cutdict:
+            if cutdict is not None and "pairs" in cutdict:
                 pcuts = cutdict["pairs"]
                 for cut in pcuts:
                     if pcuts[cut] is not None and \
@@ -278,7 +295,7 @@ def getBackgroundSingles(cutdict=None,rootfiles=[],outfile="background_output.ro
 
     #Fill ProcSummary metadata on run
     allsinglesnum[0] = entrynum
-    validsinglesnum[0] = validsinglesnum
+    validsinglesnum[0] = vsnum
     validpairnum[0] = pairnum
     total_time[0] = totaltime
 

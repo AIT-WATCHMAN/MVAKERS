@@ -1,7 +1,12 @@
 #Function takes in a summary tree and fills in what additional cuts were
 #Applied to event selection, if any.
+import numpy as np
+from numpy import *
 
 def fillSumWithCuts(sum_tree,cutdict):
+    if cutdict is None:
+        return sum_tree
+
     if len(cutdict)>0:
         for cuttype in cutdict:
             if len(cuttype) > 0:
@@ -20,7 +25,7 @@ def fillSumWithCuts(sum_tree,cutdict):
                         rcut = np.zeros(1,dtype=float64)
                         sum_tree.Branch('rcut', rcut, 'rcut/D')
                         rcut[0] = cutdict[cuttype][cut]
-                    if cut=="z" and cutdict[cuttype][cut] is not None::
+                    if cut=="z" and cutdict[cuttype][cut] is not None:
                         zcut = np.zeros(1,dtype=float64)
                         sum_tree.Branch('zcut',zcut, 'zcut/D')
                         zcut[0] = cutdict[cuttype][cut]

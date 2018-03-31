@@ -1,12 +1,8 @@
 {
-    "methods": {
-        "method1": {
-            "name": "Cuts",
-            "type": "kCuts"
-        },
-        "method2": {
-            "name": "BDT",
-            "type": "kBDT"
-        }
+    "Cuts": {
+        "type": "kCuts"
+    },
+    "BDT": {
+        "type": "kBDT"
     }
 }
