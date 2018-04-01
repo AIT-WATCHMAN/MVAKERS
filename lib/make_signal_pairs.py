@@ -218,7 +218,7 @@ def getSignalPairs(cutdict=None, rootfiles=[], outfile='signalout.root',datatree
             #Check for valid interevent_dist/time, save the pair if valid.
             interevent_dist[0] = eu.innerDist(x_p[0], y_p[0], z_p[0], x_d[0],\
                     y_d[0], z_d[0])
-            interevent_time[0] = dtree.dt * 1.0E9
+            interevent_time[0] = dtree.dt 
 
             itid_dict = {"interevent_dist": interevent_dist[0], \
                     "interevent_time": interevent_time[0]}

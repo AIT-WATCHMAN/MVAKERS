@@ -6,6 +6,6 @@
     },
     "pairs": {
         "interevent_dist": 10000,
-        "interevent_time": 50000000000000000000000000
+        "interevent_time": 150000
     }
 }
