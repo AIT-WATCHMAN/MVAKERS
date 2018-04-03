@@ -13,6 +13,7 @@ import json
 basepath = os.path.dirname(__file__)
 configpath = os.path.abspath(os.path.join(basepath,"config"))
 dbpath = os.path.abspath(os.path.join(basepath,"db"))
+guipath = os.path.abspath(os.path.join(basepath,"lib","TMVAGui"))
 
 args = ap.args
 
@@ -135,3 +136,6 @@ if __name__ == '__main__':
         mvaker = tf.TMVARunner(signalfile=sout, backgroundfile=bout,
                 mdict=methoddict, vdict=vardict,sdict=spedict)
         mvaker.RunTMVA(outfile=mvaout,pairs=PAIRS)
+        mvaker.loadResultsInGui(GUIdir=guipath, resultfile=mvaout)
+        #FIXME: want plots and weights to save in the results directory
+

@@ -1,6 +1,6 @@
 import ROOT
 from ROOT import gROOT
-import os,sys
+import os,sys,subprocess
 import utils.dbutils as du
 
 #Let's make ourselves a simple TMVA factory in python.
@@ -55,10 +55,10 @@ class TMVARunner(object):
         '''load a new signal file to run the TMVA with.'''
         self.bfile = bf
 
-    def loadResultsInGui(self,resultfile):
+    def loadResultsInGui(self,GUIdir,resultfile):
         '''Load the resultfile with the TMVA Gui'''
-        #gROOT.SetMacroPath(Use os.path to fill in where the macrow will be)
-        #gROOT.ProcessLine(".L TMVAGui.C")
+        print(resultfile)
+        subprocess.call(["root",".L",'%s/TMVAGui.C+(\"%s\")'%(GUIdir,resultfile)])
 
     def addPairVars(self, factory, var, vardict):
         factory.AddVariable("%s_p"%str(var),str(vardict[var]["title"]),
