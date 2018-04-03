@@ -79,7 +79,7 @@ def getBackgroundSingles(cutdict=None,rootfiles=[],outfile="signal_output.root",
     f_root = ROOT.TFile(outfile,"recreate")
     
     '''Set up the tree and branch of variables one wishes to save'''
-    sum_tree = ROOT.TTree("Summary","Fiducial volume and time cut parameters used")
+    sum_tree = ROOT.TTree("Summary","Meta information")
     raw_rate = np.zeros(1,dtype=float64)
     pvalid_rate = np.zeros(1,dtype=float64)
     additional_cut_acc = np.zeros(1,dtype=float64)
@@ -93,7 +93,9 @@ def getBackgroundSingles(cutdict=None,rootfiles=[],outfile="signal_output.root",
    
     raw_rate[0] = RAWRATE
     pvalid_rate[0] = VALIDRATE
-    sum_tree = st.fillSumWithCuts(sum_tree,cutdict)
+    cut_tree = ROOT.TTree("AppliedCuts","Cuts applied")
+    cut_tree = st.fillSumWithCuts(cut_tree,cutdict)
+
 
 
     t_root = ROOT.TTree("Output","Singles File Composed of all backgrounds")
@@ -170,4 +172,5 @@ def getBackgroundSingles(cutdict=None,rootfiles=[],outfile="signal_output.root",
     t_root.Write()
     sum_tree.Fill()
     sum_tree.Write()
+    cut_tree.Write()
     f_root.Close()

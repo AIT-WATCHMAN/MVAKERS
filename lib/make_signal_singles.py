@@ -51,12 +51,14 @@ def getSignalSingles(cutdict=None,rootfiles=[],outfile="signal_output.root",data
     f_root = ROOT.TFile(outfile,"recreate")
     
     '''Set up the tree and branch of variables one wishes to save'''
-    sum_tree = ROOT.TTree("ProcSummary","Summary of metadata and additional cuts used")
+    sum_tree = ROOT.TTree("ProcSummary","Summary of metadata")
     wm_signal_acc = np.zeros(1,dtype=float64)
     additional_cut_acc = np.zeros(1,dtype=float64)
     sum_tree.Branch('wm_signal_acc',wm_signal_acc, 'wm_signal_acc/D')
     sum_tree.Branch('additional_cut_acc', additional_cut_acc, 'additional_cut_acc\D')
-    sum_tree = st.fillSumWithCuts(sumtree,cutdict)
+    cut_tree = ROOT.TTree("AppliedCuts","Cuts applied")
+    cut_tree = st.fillSumWithCuts(cut_tree,cutdict)
+
     wm_signal_acc[0] = rr.GetEfficiency(rfiles)
 
     #Prep our data tree that will hold event candidate information
@@ -130,4 +132,5 @@ def getSignalSingles(cutdict=None,rootfiles=[],outfile="signal_output.root",data
     t_root.Write()
     sum_tree.Fill()
     sum_tree.Write()
+    cut_tree.Write()
     f_root.Close()

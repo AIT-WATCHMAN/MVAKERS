@@ -75,13 +75,13 @@ def getSignalPairs(cutdict=None, rootfiles=[], outfile='signalout.root',datatree
     #Open the root file that will be filled with signal IBDs
     f_root = ROOT.TFile(outfile,"recreate")
 
-    sum_tree = ROOT.TTree("ProcSummary","Cuts applied and some meta information")
+    sum_tree = ROOT.TTree("ProcSummary","Meta information")
     sum_tree.Branch('allpairnum', allpairnum, 'allpairnum/I')
     sum_tree.Branch('validpairnum', validpairnum, 'validpairnum/I')
 
-    sum_tree = st.fillSumWithCuts(sum_tree,cutdict)
-
-
+    cut_tree = ROOT.TTree("AppliedCuts","Cuts applied for allowed pairs")
+    cut_tree = st.fillSumWithCuts(cut_tree,cutdict)
+ 
     #Initialize the output root's branches
     t_root = ROOT.TTree("Output","Combined reactor positron and neutrons from MC")
     t_root.Branch('z_p',      z_p,   'z_p/D')
@@ -240,4 +240,5 @@ def getSignalPairs(cutdict=None, rootfiles=[], outfile='signalout.root',datatree
     f_root.cd()
     t_root.Write()
     sum_tree.Write()
+    cut_tree.Write() 
     f_root.Close()

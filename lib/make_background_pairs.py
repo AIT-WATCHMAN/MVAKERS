@@ -133,7 +133,7 @@ def getBackgroundPairs(cutdict=None,rootfiles=[],outfile="background_output.root
 
     f_root = ROOT.TFile(outfile,"recreate")
     
-    sum_tree = ROOT.TTree("ProcSummary","Cuts applied and some meta information")
+    sum_tree = ROOT.TTree("ProcSummary","Some meta information")
     sum_tree.Branch('raw_rate', raw_rate, 'raw_rate/D')
     sum_tree.Branch('pvalid_rate', pvalid_rate, 'pvalid_rate/D')
     sum_tree.Branch('allsinglesnum', allsinglesnum, 'allsinglesnum/I')
@@ -141,9 +141,11 @@ def getBackgroundPairs(cutdict=None,rootfiles=[],outfile="background_output.root
     sum_tree.Branch('validsinglesnum', validsinglesnum, 'validsinglesnum/I')
     sum_tree.Branch('total_time', total_time, 'total_time/D')
 
-    sum_tree = st.fillSumWithCuts(sum_tree,cutdict)
+    cut_tree = ROOT.TTree("AppliedCuts","Cuts applied and some meta information")
+    cut_tree = st.fillSumWithCuts(cut_tree,cutdict)
 
     pvalid_rate[0] = VALIDRATE
+    raw_rate[0] = RAW_RATE
 
     t_root = ROOT.TTree("Output","Combined Prompt & Delayed candidates from Background MC")
     t_root.Branch('z_p',      z_p,   'z_p/D')
@@ -279,8 +281,6 @@ def getBackgroundPairs(cutdict=None,rootfiles=[],outfile="background_output.root
                     z_p[0],x_d[0],y_d[0],z_d[0])
           
             interevent_time[0] = sum(Buffer["times"][i+1:delayedindex+1])
-            print("ID: " + str(interevent_dist[0]))
-            print("IT: " + str(interevent_time[0]))
             itid_dict = {"interevent_dist": interevent_dist[0], \
                     "interevent_time": interevent_time[0]}
             if cutdict is not None and "pairs" in cutdict:
@@ -303,4 +303,5 @@ def getBackgroundPairs(cutdict=None,rootfiles=[],outfile="background_output.root
     f_root.cd()
     t_root.Write()
     sum_tree.Write()
+    cut_tree.Write()
     f_root.Close()
