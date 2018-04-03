@@ -279,6 +279,8 @@ def getBackgroundPairs(cutdict=None,rootfiles=[],outfile="background_output.root
                     z_p[0],x_d[0],y_d[0],z_d[0])
           
             interevent_time[0] = sum(Buffer["times"][i+1:delayedindex+1])
+            print("ID: " + str(interevent_dist[0]))
+            print("IT: " + str(interevent_time[0]))
             itid_dict = {"interevent_dist": interevent_dist[0], \
                     "interevent_time": interevent_time[0]}
             if cutdict is not None and "pairs" in cutdict:

@@ -1,4 +1,5 @@
 import lib.argparser as ap
+import lib.TMVAGui.GUIRun as tvag
 import lib.utils.dbutils as du
 import lib.TMVAFactory as tf
 import lib.make_signal_singles as ss
@@ -20,6 +21,7 @@ args = ap.args
 #args defining what files are used to run what kind of MVA
 BUILD = args.BUILD
 RUNTMVA = args.RUNTMVA
+RUNGUI = args.RUNGUI
 DEBUG = args.DEBUG
 PAIRS=args.PAIRS
 SINGLES=args.SINGLES
@@ -136,6 +138,6 @@ if __name__ == '__main__':
         mvaker = tf.TMVARunner(signalfile=sout, backgroundfile=bout,
                 mdict=methoddict, vdict=vardict,sdict=spedict)
         mvaker.RunTMVA(outfile=mvaout,pairs=PAIRS)
-        mvaker.loadResultsInGui(GUIdir=guipath, resultfile=mvaout)
-        #FIXME: want plots and weights to save in the results directory
+    if RUNGUI is True:
+        tvag.loadResultsInGui(GUIdir=guipath, resultfile=mvaout)
 

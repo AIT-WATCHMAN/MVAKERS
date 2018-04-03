@@ -17,6 +17,9 @@ parser.add_argument('--buildSB', dest='BUILD', action='store_true',
 parser.add_argument('--noMVA', dest='RUNTMVA', action='store_false',
         help='Give this flag if you only want to build signal/background files'+\
                 'and exit afterwards.')
+parser.add_argument('--GUI', dest='RUNGUI', action='store_true',
+        help='If flag is activated, ROOT TMVA GUI is run on TMVA output in current'+\
+                'research directory')
 parser.add_argument('--datadir', dest='DATADIR', action='store', type=str,
         help="Points to data directory that will be used to build Sig/Bkg files")
 parser.add_argument('--jobnum', dest='JNUM', action='store', type=int,
@@ -48,7 +51,8 @@ parser.add_argument('--rcut', dest='RADIUSCUT', action='store', type=float,
 
 parser.set_defaults(DEBUG=False,JNUM=0, TIMETHRESH=5.0E5, BUILD=False,
         SINGLES=None,PAIRS=False,INTERDIST=None, RADIUSCUT=None,ZCUT=None,
-        DATADIR=None,PHOTOCOVERAGE='25pct',RUNTMVA=True,OUTDIR=defaultout)
+        DATADIR=None,PHOTOCOVERAGE='25pct',RUNTMVA=True,OUTDIR=defaultout,
+        RUNGUI=False)
 
 
 def checkParserInput(argin):
