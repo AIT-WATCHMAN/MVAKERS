@@ -202,13 +202,27 @@ def getBackgroundPairs(cutdict=None,rootfiles=[],outfile="background_output.root
                 Bkg_entrynums,Bkg_files,VALIDRATE,totaltime)
         entrynum+=1
 
+        #Remove events at start of buffer outside the time width range
+        try:
+            Buffer = __deleteOutOfWindow(Buffer,cutdict["pairs"]["interevent_time"])
+        except KeyError:
+            print("interevent_time separation not defined.  Means we have no pair")
+            print("window.  Define and interevent_time and run again.")
+            sys.exit(1)
+
         #loop through and match this delayed event with all previous prompts
         delayedindex = len(Buffer["entrynums"]) - 1
         Delayedfile = Buffer["files"][delayedindex]
         Delayedtree = Delayedfile.Get(datatree)
         Delayedtree.GetEntry(Buffer["entrynums"][delayedindex])
-
         eventvalid = True
+
+	#Check if we've exhausted a MC file's data yet
+        if Buffer["entrynums"][len(Buffer["entrynums"])-1] == \
+                Delayedtree.GetEntries():
+            print("A BACKGROUND FILE WAS DEPLETED")
+            break
+
         #Check if this passes the input cuts
         if cutdict is not None and "singles" in cutdict:
             for cut in cutdict["singles"]:
@@ -224,20 +238,6 @@ def getBackgroundPairs(cutdict=None,rootfiles=[],outfile="background_output.root
 
         if len(Buffer["entrynums"]) <=1:
             continue
-
-        #Remove events at start of buffer outside the time width range
-        try:
-            Buffer = __deleteOutOfWindow(Buffer,cutdict["pairs"]["interevent_time"])
-        except KeyError:
-            print("interevent_time separation not defined.  Means we have no pair")
-            print("window.  Define and interevent_time and run again.")
-            sys.exit(1)
-	#Check if we've exhausted a MC file's data yet
-        if Buffer["entrynums"][len(Buffer["entrynums"])-1] == \
-                Delayedtree.GetEntries():
-            print("A BACKGROUND FILE WAS DEPLETED")
-            break
-
 
         for i in xrange(delayedindex):
             Promptfile = Buffer["files"][i]
@@ -257,7 +257,7 @@ def getBackgroundPairs(cutdict=None,rootfiles=[],outfile="background_output.root
             pe_p[0]     = Prompttree.pe 
             closestPMT_p[0]  = Prompttree.closestPMT
             n9_p[0]  = Prompttree.n9
-
+            
             Delayedtree.GetEntry(Buffer["entrynums"][delayedindex])
             nhit_d[0]     = Delayedtree.nhit 
             x_d[0]       = Delayedtree.x
