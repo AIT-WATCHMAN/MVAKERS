@@ -214,13 +214,11 @@ def getBackgroundPairs(cutdict=None,rootfiles=[],outfile="background_output.root
             for cut in cutdict["singles"]:
                 if cutdict["singles"][cut] is not None and \
                         cutdict["singles"][cut] > getattr(Delayedtree,cut):
-                    print("FAILED AT"+cut+"withval "+str(getattr(Delayedtree,cut)))
                     eventvalid=False
                     break
         if eventvalid is False:
             __deleteNewestEntry(Buffer)
             continue
-        print(Buffer)
         #event is valid for given singles cuts
         vsnum+=1
 

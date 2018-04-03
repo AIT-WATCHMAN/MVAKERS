@@ -105,10 +105,10 @@ if __name__ == '__main__':
         if PAIRS is True:
             print("PREPARING PAIRED SIGNAL NTUPLE FILES NOW...")
             sp.getSignalPairs(cutdict=cutdict, 
-                    rootfiles=sigrootfiles,outfile=sout,max_entries=100)
+                    rootfiles=sigrootfiles,outfile=sout,max_entries=10000)
             print("SIGNAL FILES COMPLETE.  PREPAIRING PAIR BKG. NTUPLES...")
             bp.getBackgroundPairs(cutdict=cutdict,
-                    rootfiles=bkgrootfiles,outfile=bout,max_entries=100)
+                    rootfiles=bkgrootfiles,outfile=bout,max_entries=100000)
         print("SIGNAL AND OUTPUT FILES SAVED TO %s" % OUTDIR)
 
     if RUNTMVA is True:

@@ -19,7 +19,7 @@ parser.add_argument('--noMVA', dest='RUNTMVA', action='store_false',
                 'and exit afterwards.')
 parser.add_argument('--datadir', dest='DATADIR', action='store', type=str,
         help="Points to data directory that will be used to build Sig/Bkg files")
-parser.add_argument('--jobnum', dest='JNUM', action='store', type=str,
+parser.add_argument('--jobnum', dest='JNUM', action='store', type=int,
         help='Specify the job number; will have results save in output/results_JNUM')
 parser.add_argument('--outdir', dest='OUTDIR', action='store', type=str,
         help='Specify the output directory to save the results_JNUM directory'+\
