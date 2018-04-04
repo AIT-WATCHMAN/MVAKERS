@@ -56,24 +56,23 @@ class TMVARunner(object):
         self.bfile = bf
 
     def addPairVars(self, factory, var, vardict):
-        factory.AddVariable("%s_p"%str(var),str(vardict[var]["title"]),
+        factory.AddVariable("%s_p"%str(var),"prompt %s"%(str(vardict[var]["title"])),
                 str(vardict[var]["units"]))
-        factory.AddVariable("%s_d"%str(var),str(vardict[var]["title"]),
+        factory.AddVariable("%s_d"%str(var),"delayed %s"%(str(vardict[var]["title"])),
                 str(vardict[var]["units"]))
         return factory
 
     def addPairSpecs(self, factory, var, vardict):
         print("ADDIND SPECTATOR " + str(var))
-        factory.AddSpectator("%s_p"%str(var),str(vardict[var]["title"]),
+        factory.AddSpectator("%s_p"%str(var),"prompt %s"%(str(vardict[var]["title"])),
                 str(vardict[var]["units"]))
-        factory.AddSpectator("%s_d"%str(var),str(vardict[var]["title"]),
+        factory.AddSpectator("%s_d"%str(var),"delayed %s"%(str(vardict[var]["title"])),
                 str(vardict[var]["units"]))
         return factory
 
     def RunTMVA(self,outfile='TMVA_output.root',pairs=True):
         '''Runs the TMVA with the given settings.'''
 
-        #TODO: Check if we actually need this...
         ROOT.TMVA.Tools.Instance()
 
 
@@ -83,7 +82,6 @@ class TMVARunner(object):
                 "!V:!Silent:Color:DrawProgressBar:Transformations"+\
                 "=I;D;P;G;D:AnalysisType=Classification")
 
-        print(self.vdict)
         for var in self.vdict:
             if pairs is True and var not in ["interevent_time","interevent_dist"]:
                 factory = self.addPairVars(factory, var,self.vdict)
@@ -110,7 +108,7 @@ class TMVARunner(object):
         for method in self.mdict:
             #FIXME: Have a nice parser class for making these strings
             if self.mdict[method]["type"] == "kCuts":
-                specs = "!H:!V:FitMethod=MC:EffSel:SampleSize=200000:VarProp=FSmart"
+                specs = "!H:!V:FitMethod=MC:EffSel:SampleSize=2000000:VarProp=FSmart"
             elif self.mdict[method]["type"] == "kBDT":
                 specs = "!H:!V:NTrees=1000:MinNodeSize=2.5%:MaxDepth=3:"+\
                         "BoostType=AdaBoost:AdaBoostBeta=0.5:UseBaggedBoost:"+\
@@ -120,7 +118,6 @@ class TMVARunner(object):
                 print("Method %s not supported in this class yet." % (self.mdict[method]["type"]))
                 continue
             print("BOOKING..." + str(self.mdict[method]["type"]))
-            print("METHOD IS " + str(method))
             factory.BookMethod(getattr(ROOT.TMVA.Types,
                 str(self.mdict[method]["type"])),str(method),specs)
 
@@ -131,5 +128,4 @@ class TMVARunner(object):
         ofile.Close()
 
         print("MVA Factory done.  Wrote output to %s." % (ofile.GetName()))
-
         del factory

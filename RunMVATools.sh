@@ -9,9 +9,11 @@
 #MSUB -V
 #MSUB           # no more psub commands
 
+SHIELDTHICK=1500
+
 RPDEPENDS=/usr/gapps/adg/geant4/rat_pac_and_dependency
 RUNDIR=${RPDEPENDS}/MVATools
-DATADIR=/p/lscratche/adg/Watchboy/simplifiedData/rp_sim/dec2017/pass2_root_files_tankRadius_10000.000000_halfHeight_10000.000000_shieldThickness_1500.000000_U238_PPM_0.341000_Th232_PPM_1.330000_Rn222_0.001400
+DATADIR=/p/lscratche/adg/Watchboy/simplifiedData/rp_sim/dec2017/pass2_root_files_tankRadius_10000.000000_halfHeight_10000.000000_shieldThickness_${SHIELDTHICK}.000000_U238_PPM_0.341000_Th232_PPM_1.330000_Rn222_0.001400
 #Source ROOT for python
 source ${RPDEPENDS}/root-v5.34.00-Minuit2-Python/bin/thisroot.sh
 source ${RPDEPENDS}/geant4.10.03/geant4.10.03.p02-build/share/Geant4-10.3.2/geant4make/../../../bin/geant4.sh
@@ -22,4 +24,4 @@ export G4NEUTRONHP_USE_ONLY_PHOTONEVAPORATION=1
 
 #Go to the directory containing the MVATools, then run them
 cd $RUNDIR
-python $RUNDIR/main.py --ibd --pc 25pct --datadir $DATADIR --buildSB --debug --jobnum 1
+python $RUNDIR/main.py --ibd --pc 25pct --datadir $DATADIR --buildSB --MVA --debug --jobnum $SHIELDTHICK

@@ -14,9 +14,9 @@ parser.add_argument('--buildSB', dest='BUILD', action='store_true',
         help='take files from a WATCHMAKERS data directory (specified with the'+\
                 "--datadir flag) and prepare signal/background root files for"+\
                 "the TMVA")
-parser.add_argument('--noMVA', dest='RUNTMVA', action='store_false',
-        help='Give this flag if you only want to build signal/background files'+\
-                'and exit afterwards.')
+parser.add_argument('--MVA', dest='RUNTMVA', action='store_true',
+        help='Take the signal.root and background.root from the specified outdir and'+\
+                "run the TMVA analysis.  Output root file is saved in outdir")
 parser.add_argument('--GUI', dest='RUNGUI', action='store_true',
         help='If flag is activated, ROOT TMVA GUI is run on TMVA output in current'+\
                 'research directory')
@@ -51,7 +51,7 @@ parser.add_argument('--rcut', dest='RADIUSCUT', action='store', type=float,
 
 parser.set_defaults(DEBUG=False,JNUM=0, TIMETHRESH=5.0E5, BUILD=False,
         SINGLES=None,PAIRS=False,INTERDIST=None, RADIUSCUT=None,ZCUT=None,
-        DATADIR=None,PHOTOCOVERAGE='25pct',RUNTMVA=True,OUTDIR=defaultout,
+        DATADIR=None,PHOTOCOVERAGE='25pct',RUNTMVA=False,OUTDIR=defaultout,
         RUNGUI=False)
 
 

@@ -10,8 +10,10 @@ import lib.utils.splash as s
 import glob
 import os, sys, time
 import json
+import subprocess
 
 basepath = os.path.dirname(__file__)
+mainpath = os.path.abspath(basepath)
 configpath = os.path.abspath(os.path.join(basepath,"config"))
 dbpath = os.path.abspath(os.path.join(basepath,"db"))
 guipath = os.path.abspath(os.path.join(basepath,"lib","TMVAGui"))
@@ -54,8 +56,10 @@ if BUILD is True and os.path.exists(OUTDIR) is True:
 
 if __name__ == '__main__':
     s.splash()
-    
 
+    #FIXME: Have these as a toggle flag?  Or in config json? 
+    MAXSIGNALEV = 1000
+    MAXBKGEV = 1000
     sout = "%s/signal.root" % (OUTDIR)
     bout = "%s/background.root" % (OUTDIR)
     mvaout = "%s/TMVA_output.root" % (OUTDIR)
@@ -94,9 +98,12 @@ if __name__ == '__main__':
             print("NO SIGNAL FILES FOUND.  EXITING")
         print("SIGNAL FILES ACQUIRED.")
 
+        #Save configuration files for user reference
         files_used = {"SIGNAL": sigrootfiles, "BACKGROUND": bkgrootfiles}
         with open(OUTDIR+"/SB_files_used.json","w") as f:
             json.dump(files_used,f,sort_keys=True,indent=4)
+	with open(OUTDIR+"/cuts_applied.json","w") as f:
+            json.dump(cut_dict,f,sort_keys=True,indent=4)
 
         if SINGLES is not None:
             print("PREPARING SINGLE SIGNAL NTUPLE FILES NOW...")
@@ -108,14 +115,13 @@ if __name__ == '__main__':
         if PAIRS is True:
             print("PREPARING PAIRED SIGNAL NTUPLE FILES NOW...")
             sp.getSignalPairs(cutdict=cutdict, 
-                    rootfiles=sigrootfiles,outfile=sout,max_entries=10000)
+                    rootfiles=sigrootfiles,outfile=sout,max_entries=MAXSIGNALEV)
             print("SIGNAL FILES COMPLETE.  PREPAIRING PAIR BKG. NTUPLES...")
             bp.getBackgroundPairs(cutdict=cutdict,
-                    rootfiles=bkgrootfiles,outfile=bout,max_entries=100000)
+                    rootfiles=bkgrootfiles,outfile=bout,max_entries=MAXBKGEV)
         print("SIGNAL AND OUTPUT FILES SAVED TO %s" % OUTDIR)
 
     if RUNTMVA is True:
-        #FIXME: Need to get the signal file names in OUTDIR/result_JNUM
         print("LOADING VARIABLES TO USE AS DEFINED IN CONFIG DIR")
         with open("%s/%s" % (configpath,"variables.json"),"r") as f:
             varstouse = json.load(f)
@@ -138,6 +144,7 @@ if __name__ == '__main__':
         mvaker = tf.TMVARunner(signalfile=sout, backgroundfile=bout,
                 mdict=methoddict, vdict=vardict,sdict=spedict)
         mvaker.RunTMVA(outfile=mvaout,pairs=PAIRS)
+        subprocess.call(["mv","-f","%s/weights"%(mainpath),OUTDIR])
     if RUNGUI is True:
         tvag.loadResultsInGui(GUIdir=guipath, resultfile=mvaout)
 
