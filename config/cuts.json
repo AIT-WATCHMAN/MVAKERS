@@ -5,7 +5,7 @@
         "nhit": 3
     },
     "pairs": {
-        "interevent_dist": 5.0,
+        "interevent_dist": 5000.0,
         "interevent_time": 150000.0
     }
 }

@@ -246,9 +246,9 @@ def getBackgroundPairs(cutdict=None,rootfiles=[],outfile="background_output.root
             Prompttree = Promptfile.Get(datatree)
             Prompttree.GetEntry(Buffer["entrynums"][i])
             nhit_p[0]     = Prompttree.nhit 
-            x_p[0]       = Prompttree.x
-            y_p[0]        = Prompttree.y
-            z_p[0]      = Prompttree.z
+            x_p[0]       = Prompttree.x*1000.0
+            y_p[0]        = Prompttree.y*1000.0
+            z_p[0]      = Prompttree.z*1000.0
             r_p[0]        = eu.radius(x_p[0],y_p[0])
             u_p[0]      = Prompttree.u
             v_p[0]      = Prompttree.v 
@@ -262,9 +262,9 @@ def getBackgroundPairs(cutdict=None,rootfiles=[],outfile="background_output.root
             
             Delayedtree.GetEntry(Buffer["entrynums"][delayedindex])
             nhit_d[0]     = Delayedtree.nhit 
-            x_d[0]       = Delayedtree.x
-            y_d[0]        = Delayedtree.y
-            z_d[0]      = Delayedtree.z
+            x_d[0]       = Delayedtree.x*1000.0
+            y_d[0]        = Delayedtree.y*1000.0
+            z_d[0]      = Delayedtree.z*1000.0
             r_d[0]        = eu.radius(x_d[0],y_d[0])
             u_d[0]      = Delayedtree.u
             v_d[0]      = Delayedtree.v 
@@ -288,7 +288,7 @@ def getBackgroundPairs(cutdict=None,rootfiles=[],outfile="background_output.root
                 pcuts = cutdict["pairs"]
                 for cut in pcuts:
                     if pcuts[cut] is not None and \
-                            pcuts[cut] > itid_dict[cut]:
+                            pcuts[cut] < itid_dict[cut]:
                         itid_valid = False
             if itid_valid is False:
                 continue
