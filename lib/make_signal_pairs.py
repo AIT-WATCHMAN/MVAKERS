@@ -222,13 +222,15 @@ def getSignalPairs(cutdict=None, rootfiles=[], outfile='signalout.root',datatree
 
             itid_dict = {"interevent_dist": interevent_dist[0], \
                     "interevent_time": interevent_time[0]}
+            itid_valid = True
             if cutdict is not None and "pairs" in cutdict:
                 pcuts = cutdict["pairs"]
                 for cut in pcuts:
                     if pcuts[cut] is not None and \
                             pcuts[cut] > itid_dict[cut]:
-                        continue
-
+                        itid_valid = False
+            if itid_valid is False:
+                continue
             pair_number[0] = cp.deepcopy(valpairnum)
             t_root.Fill()
             valpairnum+=1

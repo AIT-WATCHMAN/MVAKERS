@@ -283,12 +283,15 @@ def getBackgroundPairs(cutdict=None,rootfiles=[],outfile="background_output.root
             interevent_time[0] = sum(Buffer["times"][i+1:delayedindex+1])
             itid_dict = {"interevent_dist": interevent_dist[0], \
                     "interevent_time": interevent_time[0]}
+            itid_valid = True
             if cutdict is not None and "pairs" in cutdict:
                 pcuts = cutdict["pairs"]
                 for cut in pcuts:
                     if pcuts[cut] is not None and \
                             pcuts[cut] > itid_dict[cut]:
-                        continue
+                        itid_valid = False
+            if itid_valid is False:
+                continue
             pair_number[0] = pairnum
             t_root.Fill()
             pairnum+=1

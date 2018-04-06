@@ -103,7 +103,7 @@ if __name__ == '__main__':
         with open(OUTDIR+"/SB_files_used.json","w") as f:
             json.dump(files_used,f,sort_keys=True,indent=4)
 	with open(OUTDIR+"/cuts_applied.json","w") as f:
-            json.dump(cut_dict,f,sort_keys=True,indent=4)
+            json.dump(cutdict,f,sort_keys=True,indent=4)
 
         if SINGLES is not None:
             print("PREPARING SINGLE SIGNAL NTUPLE FILES NOW...")
