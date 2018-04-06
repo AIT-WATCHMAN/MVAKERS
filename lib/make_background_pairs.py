@@ -288,7 +288,7 @@ def getBackgroundPairs(cutdict=None,rootfiles=[],outfile="background_output.root
                 pcuts = cutdict["pairs"]
                 for cut in pcuts:
                     if pcuts[cut] is not None and \
-                            pcuts[cut] > itid_dict[cut]:
+                            pcuts[cut] < itid_dict[cut]:
                         itid_valid = False
             if itid_valid is False:
                 continue
