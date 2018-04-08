@@ -228,7 +228,6 @@ def getSignalPairs(cutdict=None, rootfiles=[], outfile='signalout.root',datatree
                 for cut in pcuts:
                     if pcuts[cut] is not None and \
                             pcuts[cut] < itid_dict[cut]:
-                        print("FAILED CUT")
                         itid_valid = False
             if itid_valid is False:
                 continue

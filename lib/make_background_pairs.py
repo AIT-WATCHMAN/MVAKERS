@@ -257,7 +257,7 @@ def getBackgroundPairs(cutdict=None,rootfiles=[],outfile="background_output.root
             good_pos_p[0] = Prompttree.good_pos 
             good_dir_p[0] = Prompttree.good_dir 
             pe_p[0]     = Prompttree.pe 
-            closestPMT_p[0]  = Prompttree.closestPMT
+            closestPMT_p[0]  = Prompttree.closestPMT*1000.0
             n9_p[0]  = Prompttree.n9
             
             Delayedtree.GetEntry(Buffer["entrynums"][delayedindex])
@@ -273,7 +273,7 @@ def getBackgroundPairs(cutdict=None,rootfiles=[],outfile="background_output.root
             good_pos_d[0] = Delayedtree.good_pos 
             good_dir_d[0] = Delayedtree.good_dir 
             pe_d[0]     = Delayedtree.pe 
-            closestPMT_d[0]  = Delayedtree.closestPMT
+            closestPMT_d[0]  = Delayedtree.closestPMT*1000.0
             n9_d[0]  = Delayedtree.n9
             
             #Check for intereventdist cut and fill in interevent dist
