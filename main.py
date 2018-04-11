@@ -61,8 +61,8 @@ if __name__ == '__main__':
         sys.exit(0)
 
     #FIXME: Have these as a toggle flag?  Or in config json? 
-    MAXSIGNALEV = 1000
-    MAXBKGEV = 1000
+    MAXSIGNALEV = 100000
+    MAXBKGEV = 1000000
     sout = "%s/signal.root" % (OUTDIR)
     bout = "%s/background.root" % (OUTDIR)
     mvaout = "%s/TMVA_output.root" % (OUTDIR)
@@ -116,7 +116,7 @@ if __name__ == '__main__':
         with open(OUTDIR+"/SB_files_used.json","w") as f:
             json.dump(files_used,f,sort_keys=True,indent=4)
 	with open(OUTDIR+"/cuts_applied.json","w") as f:
-            json.dump(cut_dict,f,sort_keys=True,indent=4)
+            json.dump(cutdict,f,sort_keys=True,indent=4)
 
         if SINGLES is not None:
             print("PREPARING SINGLE SIGNAL NTUPLE FILES NOW...")
