@@ -58,8 +58,8 @@ if __name__ == '__main__':
     s.splash()
 
     #FIXME: Have these as a toggle flag?  Or in config json? 
-    MAXSIGNALEV = 100
-    MAXBKGEV = 100
+    MAXSIGNALEV = 100000
+    MAXBKGEV = 1000000
     sout = "%s/signal.root" % (OUTDIR)
     bout = "%s/background.root" % (OUTDIR)
     mvaout = "%s/TMVA_output.root" % (OUTDIR)

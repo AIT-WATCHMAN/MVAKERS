@@ -108,7 +108,15 @@ class TMVARunner(object):
         for method in self.mdict:
             #FIXME: Have a nice parser class for making these strings
             if self.mdict[method]["type"] == "kCuts":
-                specs = "!H:!V:FitMethod=MC:EffSel:SampleSize=2000000:VarProp=FSmart"
+                specs = "!H:!V:FitMethod=MC:EffSel:SampleSize=15000000:VarProp=FSmart"
+                if method == "CutsD":
+                    specs = specs + ":VarTransform=Decorrelate"
+                if method == "CutsPCA":
+                    specs = specs + ":VarTransform=PCA"
+                if method == "CutsGA":
+                    #TODO: Have defaults in dictionary in DB, put mods in mdict  
+                    specs = self.mdict[method]["specs"]
+                    print("SPECS: " + str(specs))
             elif self.mdict[method]["type"] == "kBDT":
                 specs = "!H:!V:NTrees=1000:MinNodeSize=2.5%:MaxDepth=3:"+\
                         "BoostType=AdaBoost:AdaBoostBeta=0.5:UseBaggedBoost:"+\
@@ -119,7 +127,7 @@ class TMVARunner(object):
                 continue
             print("BOOKING..." + str(self.mdict[method]["type"]))
             factory.BookMethod(getattr(ROOT.TMVA.Types,
-                str(self.mdict[method]["type"])),str(method),specs)
+                str(self.mdict[method]["type"])),str(method),str(specs))
 
         factory.TrainAllMethods() #Train MVAs with training events
         factory.TestAllMethods() #Evaluate all MVAS with set of test events
