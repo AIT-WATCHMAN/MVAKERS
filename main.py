@@ -141,10 +141,12 @@ if __name__ == '__main__':
             varstouse = json.load(f)
         with open("%s/%s" % (dbpath,"WATCHMAKERS_variables.json"),"r") as f:
             variable_db = json.load(f)
-        vardict = du.loadVariableDescriptions(varstouse["variables"],
-                        variable_db)
-        spedict = du.loadVariableDescriptions(varstouse["spectators"],
-                        variable_db)
+        if PAIRS is True:
+            vsdict = du.loadPairVariableDescriptions(varstouse["pairs"],
+                            variable_db)
+        else:
+            vsdict = du.loadSinglesVariableDescriptions(varstouse["singles"],
+                            variable_db)
 
         methoddict = {}
         print("LOADING METHODS TO USE AS DEFINED IN CONFIG DIR")
@@ -156,7 +158,7 @@ if __name__ == '__main__':
             print("METHODS BEING FED IN TO MVA: " + str(methoddict))
         print("RUNNING TMVA ON SIGNAL AND BACKGROUND FILES NOW...")
         mvaker = tf.TMVARunner(signalfile=sout, backgroundfile=bout,
-                mdict=methoddict, vdict=vardict,sdict=spedict)
+                mdict=methoddict, varspedict=vsdict)
         mvaker.RunTMVA(outfile=mvaout,pairs=PAIRS)
         subprocess.call(["mv","-f","%s/weights"%(mainpath),OUTDIR])
 

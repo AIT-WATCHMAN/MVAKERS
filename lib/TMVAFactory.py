@@ -10,7 +10,7 @@ import utils.dbutils as du
 
 class TMVARunner(object):
     def __init__(self, signalfile=None, backgroundfile=None, mdict=None, 
-            sdict=None,vdict=None):
+            varspedict=None):
         '''
         This class takes in a signal file, background file, method
         dictionary, and variable dictionary and runs ROOT's TMVA classifiers.
@@ -18,8 +18,7 @@ class TMVARunner(object):
         self.sfile = signalfile
         self.bfile = backgroundfile
         self.mdict = mdict
-        self.vdict = vdict
-        self.sdict = sdict
+        self.vsdict = varspedict
 
         #weights for signal and background
         self.sw = 1.0
@@ -55,20 +54,30 @@ class TMVARunner(object):
         '''load a new signal file to run the TMVA with.'''
         self.bfile = bf
 
-    def addPairVars(self, factory, var, vardict):
-        factory.AddVariable("%s_p"%str(var),"prompt %s"%(str(vardict[var]["title"])),
-                str(vardict[var]["units"]))
-        factory.AddVariable("%s_d"%str(var),"delayed %s"%(str(vardict[var]["title"])),
-                str(vardict[var]["units"]))
+    def addPairVars(self, factory, vardict):
+        for var in vardict["prompt"]:
+            factory.AddVariable("%s_p"%str(var),"prompt %s"%(str(vardict["prompt"][var]["title"])),
+                str(vardict["prompt"][var]["units"]))
+        for var in vardict["delayed"]:
+            factory.AddVariable("%s_d"%str(var),"delayed %s"%(str(vardict["delayed"][var]["title"])),
+                str(vardict["delayed"][var]["units"]))
+        for var in vardict["interevent"]:
+            factory.AddVariable(str(var),str(vardict["interevent"][var]["title"]),
+                    str(vardict["interevent"][var]["units"]))
         return factory
 
-    def addPairSpecs(self, factory, var, vardict):
-        print("ADDIND SPECTATOR " + str(var))
-        factory.AddSpectator("%s_p"%str(var),"prompt %s"%(str(vardict[var]["title"])),
-                str(vardict[var]["units"]))
-        factory.AddSpectator("%s_d"%str(var),"delayed %s"%(str(vardict[var]["title"])),
-                str(vardict[var]["units"]))
+    def addPairSpecs(self, factory, vardict):
+        for var in vardict["prompt"]:
+            factory.AddSpectator("%s_p"%str(var),"prompt %s"%(str(vardict["prompt"][var]["title"])),
+                str(vardict["prompt"][var]["units"]))
+        for var in vardict["delayed"]:
+            factory.AddSpectator("%s_d"%str(var),"delayed %s"%(str(vardict["delayed"][var]["title"])),
+                str(vardict["delayed"][var]["units"]))
+        for var in vardict["interevent"]:
+            factory.AddSpectator(str(var),str(vardict["interevent"][var]["title"]),
+                    str(vardict["interevent"][var]["units"]))
         return factory
+
 
     def RunTMVA(self,outfile='TMVA_output.root',pairs=True):
         '''Runs the TMVA with the given settings.'''
@@ -82,19 +91,18 @@ class TMVARunner(object):
                 "!V:!Silent:Color:DrawProgressBar:Transformations"+\
                 "=I;D;P;G;D:AnalysisType=Classification")
 
-        for var in self.vdict:
-            if pairs is True and var not in ["interevent_time","interevent_dist"]:
-                factory = self.addPairVars(factory, var,self.vdict)
-            else:
-                factory.AddVariable(str(var),str(self.vdict[var]["title"]),
-                        str(self.vdict[var]["units"]))
-        if self.sdict is not None:
-            for spe in self.sdict:
-                if pairs is True and spe not in ["interevent_time","interevent_dist"]:
-                    factory = self.addPairSpecs(factory, spe, self.sdict)
-                else:
-                    factory.AddSpectator(str(spe),
-                            str(self.sdict[spe]["title"]),str(self.sdict[spe]["units"]))
+        if pairs is True:
+            factory = self.addPairVars(factory, self.vsdict["variables"])
+        else:
+            for var in self.vsdict["variables"]:
+                factory.AddVariable(str(var),str(self.vsdict["variables"][var]["title"]),
+                    str(self.vsdict["variables"][var]["units"]))
+        if pairs is True:
+            factory = self.addPairSpecs(factory, self.vsdict["spectators"])
+        else:
+            for var in self.vsdict["spectators"]:
+                factory.AddVariable(str(var),str(self.vsdict["spectators"][var]["title"]),
+                    str(self.vsdict["spectators"][var]["units"]))
         #Add signal and background info. to factory
         sigfile = ROOT.TFile(self.sfile,"READ")
         bkgfile = ROOT.TFile(self.bfile,"READ")
