@@ -1,6 +1,5 @@
-SBMaker/python/rootouts/
 old/
 weights/
 data/
-results/
+output/*
 plots/

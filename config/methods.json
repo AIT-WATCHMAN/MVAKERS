@@ -1,8 +1,6 @@
 {
-    "Cuts": {
-        "type": "kCuts"
-    },
-    "BDT": {
-        "type": "kBDT"
+    "CutsGA": {
+        "type": "kCuts",
+        "specs": "H:!V:FitMethod=GA:EffSel:Steps=40:Cycles=3:PopSize=400:SC_steps=10:SC_rate=5:SC_factor=0.95"
     }
 }

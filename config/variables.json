@@ -1,4 +1,18 @@
 {
-    "variables": ["n9","interevent_dist","interevent_time","closestPMT","pe"],
-    "spectators": ["x","y"]
+    "pairs": {
+        "variables": {
+            "prompt": ["n9","closestPMT"],
+            "delayed": ["n9"],
+            "interevent": []
+        },
+        "spectators": {
+            "prompt": [],
+            "delayed": [],
+            "interevent": []
+        }
+    },
+    "singles": {
+        "variables": ["n9","closestPMT"],
+        "spectators": ["z","r"]
+    }
 }
