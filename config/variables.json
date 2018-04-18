@@ -7,7 +7,8 @@
         },
         "spectators": {
             "prompt": [],
-            "delayed": []
+            "delayed": [],
+            "interevent": []
         }
     },
     "singles": {
