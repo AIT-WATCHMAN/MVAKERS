@@ -2,7 +2,7 @@
     "pairs": {
         "variables": {
             "prompt": ["n9","closestPMT"],
-            "delayed": ["n9"],
+            "delayed": ["n9","closestPMT"],
             "interevent": []
         },
         "spectators": {

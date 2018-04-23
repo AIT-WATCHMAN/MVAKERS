@@ -79,7 +79,7 @@ if __name__ == '__main__':
         print("GETTING ALL AVAILABLE BACKGROUND FILES FROM DATADIR")
         bkgrootfiles=[]
       
-        Bkg_types = ["WV","PMT"]
+        Bkg_types = ["NA"]
         for btype in Bkg_types:
             bkgrootfiles += glob.glob("%s/%s/*%s.root" % (DATADIR,PC,btype))
         if DEBUG is True:
@@ -91,14 +91,14 @@ if __name__ == '__main__':
     
         sigrootfiles=[]
         if PAIRS is True:
-            print("GETTING PAIR SIGNAL FILES FROM DATADIR/ITID")
-            sigrootfiles += glob.glob("%s/%s/ITID/*.root" % (DATADIR,PC))
+            print("GETTING PROMPT/DELAYED PAIR MC FOR SIGNAL TRAINING")
+            sigrootfiles += glob.glob("%s/%s/*pn_ibd.root" % (DATADIR,PC))
         if SINGLES is not None:
             print("GETTING SINGLES SIGNAL FILE OF TYPE %s" % (SINGLES))
             if SINGLES=="neutron":
-                suffix="_N"
+                suffix="_ibd_n"
             if SINGLES=="positron":
-                suffix="_IBD"
+                suffix="_ibd_p"
             else:
                 print("SINGLES TYPE GIVEN NOT SUPPORTED.  EXITING")
                 sys.exit(1)
