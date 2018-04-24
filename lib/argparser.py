@@ -21,7 +21,7 @@ parser.add_argument('--GUI', dest='RUNGUI', action='store_true',
         help='If flag is activated, ROOT TMVA GUI is run on TMVA output in current'+\
                 'research directory')
 parser.add_argument('--datadir', dest='DATADIR', action='store', type=str,
-        help="Points to data directory that will be used to build Sig/Bkg files")
+        help="Points to data where WATCHMAKERS  files")
 parser.add_argument('--jobnum', dest='JNUM', action='store', type=int,
         help='Specify the job number; will have results save in output/results_JNUM')
 parser.add_argument('--outdir', dest='OUTDIR', action='store', type=str,
@@ -38,6 +38,13 @@ parser.add_argument('--ibd', dest='PAIRS', action='store_true',
         help='Build signal/background files by forming IBD pairs from '+\
                 'accidentals in given directory for'+\
                 'background, and from Bonsai IBD Monte Carlo in DATADIR/ITID/')
+##--------------------SPECIFICATIONS FOR BKG RATE CALCULATION----------##
+parser.add_argument('--halfHeight', dest='HALFHEIGHT', action='store', type=float,
+        help='Define the height of the WATCHMAN tank in mm')
+parser.add_argument('--shieldThick', dest='SHIELDTHICK', action='store', type=float,
+        help='Distance from tank to PMT frame in mm')
+parser.add_argument('--tankRad', dest='TANKRADIUS', action='store', type=float,
+        help='Radius of tank in mm')
 ##--------------------ADDITIONAL CUTS TO USE PRE-MVA-------------------##
 parser.add_argument('--zcut', dest='ZCUT', action='store', type=float,
         help='Only consider events with abs(z) less than abs(input)'+\

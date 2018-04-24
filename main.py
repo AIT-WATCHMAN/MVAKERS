@@ -1,3 +1,8 @@
+from watchmakers.load import *
+#from watchmakers.sensitivity import findRate
+
+print("LOADED ALL")
+
 import lib.argparser as ap
 import lib.TMVAGui.GUIRun as tvag
 import lib.utils.dbutils as du
@@ -67,28 +72,40 @@ if __name__ == '__main__':
     bout = "%s/background.root" % (OUTDIR)
     mvaout = "%s/TMVA_output.root" % (OUTDIR)
 
-
+	
     if BUILD is True:
-        print("------BUILDING SIGNAL AND BACKGROUND FILES------")
+        print("----USING WATCHMAKERS TO ESTIMATE SIG/BKG RATES------")
+        time.sleep(2)
+        rate_command = ["watch","--findRate","--newVers","--tankRad",TANKRADIUS,\
+                "--halfHeight",HALFHEIGHT,"--shieldThick",SHIELDTHICK,"-C",PC]
+        subprocess.call(rate_command)
+        subprocess.call(["mv","-f","%s/*%s.txt"%(mainpath,str(PC)),OUTDIR])
+        print("------ESTIMATED BACKGROUNDS SAVE TO OUTPUT DIR-------")
+
+	print("------BUILDING SIGNAL AND BACKGROUND FILES------")
         time.sleep(2)
 
-        print("LOADING CUTS TO USE AS DEFINED IN CONFIG DIR")
+        print("----LOADING CUTS TO USE AS DEFINED IN CONFIG DIR----")
         with open("%s/%s" % (configpath,"cuts.json"),"r") as f:
             cutdict = json.load(f)
         
-        print("GETTING ALL AVAILABLE BACKGROUND FILES FROM DATADIR")
+        print("---GETTING ALL AVAILABLE BACKGROUND FILES FROM DATADIR---")
         bkgrootfiles=[]
       
-        Bkg_types = ["NA"]
+        Bkg_types = ["PMT","WaterVolume"]
         for btype in Bkg_types:
-            bkgrootfiles += glob.glob("%s/%s/*%s.root" % (DATADIR,PC,btype))
+            type_candidates = glob.glob("%s/%s/*%s*" % (DATADIR,PC,btype))
+            for candidate in type_candidates:
+                if "CHAIN" in candidate:
+                    bkgrootfiles+=candidate
+
         if DEBUG is True:
             print("BKGFILES BEING USED: " + str(bkgrootfiles))
         if len(bkgrootfiles) == 0:
             print("NO BACKGROUND FILES FOUND.  EXITING")
             sys.exit(1)
         print("BACKGROUND FILES ACQUIRED.")
-    
+ 
         sigrootfiles=[]
         if PAIRS is True:
             print("GETTING PROMPT/DELAYED PAIR MC FOR SIGNAL TRAINING")
@@ -118,6 +135,11 @@ if __name__ == '__main__':
 	with open(OUTDIR+"/cuts_applied.json","w") as f:
             json.dump(cutdict,f,sort_keys=True,indent=4)
 
+
+        #FIXME: We have to load in the rates and pass them as an object
+        #Into the getSignal and getBackground functions.  Then, modify
+        #These functions to fill their ProcSummarys with the fed in rates,
+        #As well as efficiencies post-cuts given to the TMVA
         if SINGLES is not None:
             print("PREPARING SINGLE SIGNAL NTUPLE FILES NOW...")
             ss.getSignalSingles(cutdict=cutdict,

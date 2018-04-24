@@ -59,13 +59,18 @@ def GetRates_Valids(rootfile_list):
         tot_rateHz = 0.0
         for i in xrange(frunSummary.GetEntries()):
             frunSummary.GetEntry(i)
-            tot_rateHz += float(frunSummary.rateHz)
-            totprompts += float(frunSummary.potential_prompts)
-            totevents += float(frunSummary.nEvents)
-        valid_rate = (tot_rateHz/float(frunSummary.GetEntries())) * \
-                ((totprompts)/ \
-            (totevents))
-        ValidCandidate_rates.append(valid_rate)
+            try:
+            	tot_rateHz += float(frunSummary.rateHz)
+            	totprompts += float(frunSummary.potential_prompts)
+            	totevents += float(frunSummary.nEvents)
+        	valid_rate = (tot_rateHz/float(frunSummary.GetEntries())) * \
+                        ((totprompts)/ \
+            	        (totevents))
+                ValidCandidate_rates.append(valid_rate)
+            except AttributeError:
+                print("FILE %s HAS NO RATE INFORMATION. CONTINUING"%(str(f)))
+    if len(ValidCandidate_rates) == 0:
+        ValidCandidate_rates.append(0.0)	
     return np.array(ValidCandidate_rates)
 
 def GetRates_Raw(rootfile_list):
@@ -77,8 +82,11 @@ def GetRates_Raw(rootfile_list):
         frunSummary = f.Get('runSummary')
         for i in xrange(frunSummary.GetEntries()):
             frunSummary.GetEntry(i)
-            tot_rateHz += float(frunSummary.rateHz)
-        rateHz = tot_rateHz/float(frunSummary.GetEntries())
+            try:
+                tot_rateHz += float(frunSummary.rateHz)
+            except:
+                print("FILE %s HAS NO RATEHZ IN RUNSUMMARY. CONTINUING"%str(f))
+         rateHz = tot_rateHz/float(frunSummary.GetEntries())
         Raw_rates.append(rateHz)
     return np.array(Raw_rates)
 

@@ -1,11 +1,11 @@
 #!/bin/sh
-#MSUB -N WM MVAToolsRunner #name of job
+#MSUB -N WM_MVAToolsRunner #name of job
 #MSUB -A ared   #sets bank account
 #MSUB -l nodes=1:ppn=1,walltime=23:59:59,partition=borax #uses one node
 #MSUB -q pbatch     #pool
-#MSUB -o /p/lscratche/adg/Watchboy/simplifiedData/rp_sim/MVATools/GridLog.log
-#MSUB -e /p/lscratche/adg/Watchboy/simplifiedData/rp_sim/MVATools/GridErr.err
-#MSUB -d /p/lscratche/adg/Watchboy/simplifiedData/rp_sim/MVATools #dir to run from
+#MSUB -o /usr/gapps/adg/geant4/rat_pac_and_dependency/MVATools/GridLog.log
+#MSUB -e /usr/gapps/adg/geant4/rat_pac_and_dependency/MVATools/GridErr.err
+#MSUB -d /usr/gapps/adg/geant4/rat_pac_and_dependency/MVATools #dir to run from
 #MSUB -V
 #MSUB           # no more psub commands
 
@@ -27,4 +27,5 @@ export G4NEUTRONHP_USE_ONLY_PHOTONEVAPORATION=1
 
 #Go to the directory containing the MVATools, then run them
 cd $RUNDIR
+#watch --findRate --newVers --tankRad ${TANKRADIUS}. --halfHeight ${HALFHEIGHT}. --shieldThick ${SHIELDTHICK}.
 python $RUNDIR/main.py --ibd --pc 25pct --datadir $DATADIR --buildSB --MVA --debug --jobnum $SHIELDTHICK
