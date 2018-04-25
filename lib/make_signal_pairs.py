@@ -24,7 +24,7 @@ import utils.summary_tree as st
 
 
 
-def getSignalPairs(cutdict=None, rootfiles=[], outfile='signalout.root',datatree="data",max_entries=9E15):
+def getSignalPairs(ratedict=None,cutdict=None, rootfiles=[], outfile='signalout.root',datatree="data",max_entries=9E15):
     '''
     Given a cut dictionary and list of rootfiles, this function
     returns a single root file ready for passing to the TMVA Factory in
@@ -68,16 +68,18 @@ def getSignalPairs(cutdict=None, rootfiles=[], outfile='signalout.root',datatree
     pair_number = np.zeros(1,dtype=int)
 
     #Variables for filling ProcSummary
+    IBDrate = np.zeros(1,dtype=float64)
     allpairnum = np.zeros(1,dtype=int)
     validpairnum = np.zeros(1,dtype=int)
     timecut = np.zeros(1,dtype=float64)
 
     #Open the root file that will be filled with signal IBDs
     f_root = ROOT.TFile(outfile,"recreate")
-
     sum_tree = ROOT.TTree("ProcSummary","Meta information")
+    sum_tree.Branch('IBDrate', IBDrate, 'IBDrate/D')
     sum_tree.Branch('allpairnum', allpairnum, 'allpairnum/I')
     sum_tree.Branch('validpairnum', validpairnum, 'validpairnum/I')
+    IBDrate[0] = ratedict["IBD_rate"]
 
     cut_tree = ROOT.TTree("AppliedCuts","Cuts applied for allowed pairs")
     cut_tree = st.fillSumWithCuts(cut_tree,cutdict)

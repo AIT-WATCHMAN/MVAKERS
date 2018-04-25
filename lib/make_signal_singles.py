@@ -24,7 +24,7 @@ from sys import argv
 from decimal import *
 
    
-def getSignalSingles(cutdict=None,rootfiles=[],outfile="signal_output.root",datatree='data',max_entries=9E15):
+def getSignalSingles(ratedict=None,cutdict=None,rootfiles=[],outfile="signal_output.root",datatree='data',max_entries=9E15):
     rfiles = []
     for f in rootfiles:
         rfiles.append(ROOT.TFile(f,"read"))
@@ -52,14 +52,15 @@ def getSignalSingles(cutdict=None,rootfiles=[],outfile="signal_output.root",data
     
     '''Set up the tree and branch of variables one wishes to save'''
     sum_tree = ROOT.TTree("ProcSummary","Summary of metadata")
-    wm_signal_acc = np.zeros(1,dtype=float64)
-    additional_cut_acc = np.zeros(1,dtype=float64)
-    sum_tree.Branch('wm_signal_acc',wm_signal_acc, 'wm_signal_acc/D')
-    sum_tree.Branch('additional_cut_acc', additional_cut_acc, 'additional_cut_acc\D')
+    signal_acceptance = np.zeros(1,dtype=float64)
+    IBDrate = np.zeros(1,dtype=float64)
+    sum_tree.Branch('IBDrate', IBDrate, 'IBDrate/D')
+    sum_tree.Branch('signal_acceptance',signal_acceptance, 'signal_acceptance/D')
+    IBDrate[0] = ratedict["IBD_rate"]
+
     cut_tree = ROOT.TTree("AppliedCuts","Cuts applied")
     cut_tree = st.fillSumWithCuts(cut_tree,cutdict)
 
-    wm_signal_acc[0] = rr.GetEfficiency(rfiles)
 
     #Prep our data tree that will hold event candidate information
     t_root = ROOT.TTree("Output","Singles File Composed of all backgrounds")
@@ -127,7 +128,7 @@ def getSignalSingles(cutdict=None,rootfiles=[],outfile="signal_output.root",data
             entrynum+=1
     #/while(entrynum < max_entries)
 
-    additional_cut_acc[0] = float(entrynum)/float(entries_viewed)
+    signal_acceptance[0] = float(entrynum)/float(entries_viewed)
     f_root.cd()
     t_root.Write()
     sum_tree.Fill()

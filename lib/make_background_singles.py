@@ -39,7 +39,7 @@ def __loadNewEvent(Bkg_rates_validfits,Bkg_entrynums,Bkg_files):
             break
     return thisentry, thisfile
         
-def getBackgroundSingles(cutdict=None,rootfiles=[],outfile="signal_output.root",datatree='data',max_entries=9E15):
+def getBackgroundSingles(ratedict=None,cutdict=None,rootfiles=[],outfile="signal_output.root",datatree='data',max_entries=9E15):
     Bkg_files = []
     #For a list of given files, 
     for f in rootfiles:
@@ -48,14 +48,11 @@ def getBackgroundSingles(cutdict=None,rootfiles=[],outfile="signal_output.root",
     
     #Calculate the raw rate and valid rate of backgrounds in given files.
     #Uses metadata from WATCHMAKERS ProcSummary to do this.
-    Bkg_rates_validfits = rr.GetRates_Valids(Bkg_files)
-    Bkg_rates_raw = rr.GetRates_Raw(Bkg_files)
+    Bkg_rates_validfits = rr.GetRates_Triggered(Bkg_files,ratedict)
     Bkg_entrynums = np.zeros(len(Bkg_files))
     
-    RAWRATE = np.sum(Bkg_rates_raw)
-    VALIDRATE = np.sum(Bkg_rates_validfits)
-    print("RAW RATE: " + str(RAWRATE))
-    print("VALID SINGLE CANDIDATE RATE: " + str(VALIDRATE))
+    TRIGDRATE = np.sum(Bkg_rates_validfits)
+    print("VALID SINGLE CANDIDATE RATE: " + str(TRIGDRATE))
 
     '''Set up variables for root tree'''
     n9_rf        = np.zeros(1,dtype=float64)
@@ -80,19 +77,16 @@ def getBackgroundSingles(cutdict=None,rootfiles=[],outfile="signal_output.root",
     
     '''Set up the tree and branch of variables one wishes to save'''
     sum_tree = ROOT.TTree("Summary","Meta information")
-    raw_rate = np.zeros(1,dtype=float64)
-    pvalid_rate = np.zeros(1,dtype=float64)
-    additional_cut_acc = np.zeros(1,dtype=float64)
+    trigd_rate = np.zeros(1,dtype=float64)
+    cut_acc = np.zeros(1,dtype=float64)
 
     total_time = np.zeros(1,dtype=float64)
-    sum_tree.Branch('raw_rate', raw_rate, 'raw_rate/D')
-    sum_tree.Branch('pvalid_rate', pvalid_rate, 'pvalid_rate/D')
-    sum_tree.Branch('additional_cut_acc', additional_cut_acc, 'additional_cut_acc\D')
+    sum_tree.Branch('trigd_rate', trigd_rate, 'trigd_rate/D')
+    sum_tree.Branch('cut_acc', cut_acc, 'cut_acc\D')
 
     sum_tree.Branch('total_time', total_time, 'total_time/D')
    
-    raw_rate[0] = RAWRATE
-    pvalid_rate[0] = VALIDRATE
+    trigd_rate[0] = TRIGDRATE
     cut_tree = ROOT.TTree("AppliedCuts","Cuts applied")
     cut_tree = st.fillSumWithCuts(cut_tree,cutdict)
 
@@ -117,7 +111,7 @@ def getBackgroundSingles(cutdict=None,rootfiles=[],outfile="signal_output.root",
     t_root.Branch('closestPMT', closestPMT_rf, 'closestPMT/D')
 
 
-    #Begin finding
+    #Begin finding valid singles
     entrynum = 0
     entries_viewed = 0
     totaltime = 0.0
@@ -130,7 +124,7 @@ def getBackgroundSingles(cutdict=None,rootfiles=[],outfile="signal_output.root",
         #Shoot for the next background file and it's next unused entry
         thisentry, thisevent_bkgfile = __loadNewEvent(Bkg_rates_validfits,\
                 Bkg_entrynums,Bkg_files)
-        totaltime = totaltime + eu.shootTimeDiff(VALIDRATE)
+        totaltime = totaltime + eu.shootTimeDiff(TRIGDRATE)
         thisevent_bkgfile.cd()
         bkgtree = thisevent_bkgfile.Get(datatree)
 
@@ -167,7 +161,7 @@ def getBackgroundSingles(cutdict=None,rootfiles=[],outfile="signal_output.root",
         entrynum+=1
     #/while(entrynum < max_entries)
     total_time[0] = float(totaltime)
-    additional_cut_acc[0] = float(entrynum)/float(entries_viewed)
+    cut_acc[0] = float(entrynum)/float(entries_viewed)
     f_root.cd()
     t_root.Write()
     sum_tree.Fill()

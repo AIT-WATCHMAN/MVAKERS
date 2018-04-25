@@ -31,20 +31,20 @@ import utils.RootReader as rr
 import utils.summary_tree as st
 
 
-def __loadNewEvent(buff,Bkg_rates_validfits,Bkg_entrynums,Bkg_files,VALIDRATE,totaltime):
+def __loadNewEvent(buff,Bkg_rates_triggered,Bkg_entrynums,Bkg_files,TRIGDRATE,totaltime):
     '''
     Using the loaded-in background files, shoot the next event's information,
     including file it's in, it's entry number, and the time since last event
     '''
     shot =np.random.rand()
     #Assuming Bkg_rates is a numpy array
-    for i in xrange(len(Bkg_rates_validfits)):
-        if shot < (sum(Bkg_rates_validfits[0:i+1]) / \
-                np.sum(Bkg_rates_validfits)):
+    for i in xrange(len(Bkg_rates_triggered)):
+        if shot < (sum(Bkg_rates_triggered[0:i+1]) / \
+                np.sum(Bkg_rates_triggered)):
             Bkg_entrynums[i]+=1
             buff["entrynums"].append(int(Bkg_entrynums[i]))
             buff["files"].append(Bkg_files[i])
-            shottime = eu.shootTimeDiff(VALIDRATE)
+            shottime = eu.shootTimeDiff(TRIGDRATE)
             totaltime= totaltime + shottime
             buff["times"].append(shottime)
             break
@@ -68,7 +68,7 @@ def __deleteNewestEntry(buff):
     return buff
 
 
-def getBackgroundPairs(cutdict=None,rootfiles=[],outfile="background_output.root",datatree='data',max_entries=9E15):
+def getBackgroundPairs(ratedict=None,cutdict=None,rootfiles=[],outfile="background_output.root",datatree='data',max_entries=9E15):
     #For a list of given files, append the ROOT file object to Bkg_files list 
     print("ROOTFILES BEING FED IN: " + str(rootfiles)) 
     Bkg_files = []
@@ -78,12 +78,10 @@ def getBackgroundPairs(cutdict=None,rootfiles=[],outfile="background_output.root
     
     #Want to shoot the rates of events that could be a prompt candidate.  Only want
     #To shoot using rates_validfits since only valid events are filled into the ntuple
-    Bkg_rates_validfits = rr.GetRates_Valids(Bkg_files)
-    Bkg_rates_raw = rr.GetRates_Raw(Bkg_files)
+    Bkg_rates_triggered = rr.GetRates_Triggered(Bkg_files,ratedict)
     Bkg_entrynums = np.zeros(len(Bkg_files))
     
-    RAW_RATE = np.sum(Bkg_rates_raw)
-    VALIDRATE = np.sum(Bkg_rates_validfits)
+    TRIGDRATE = np.sum(Bkg_rates_triggered)
     
     '''Set up variables for output root tree'''
     x_p       = np.zeros(1,dtype=float64)
@@ -126,7 +124,7 @@ def getBackgroundPairs(cutdict=None,rootfiles=[],outfile="background_output.root
     raw_rate = np.zeros(1,dtype=float64)
     validsinglesnum = np.zeros(1,dtype=int)
     validpairnum = np.zeros(1,dtype=int) 
-    pvalid_rate = np.zeros(1,dtype=float64)
+    trigd_rate = np.zeros(1,dtype=float64)
     total_time = np.zeros(1,dtype=float64)
 
     '''Open a root file with name of dataType'''
@@ -134,8 +132,7 @@ def getBackgroundPairs(cutdict=None,rootfiles=[],outfile="background_output.root
     f_root = ROOT.TFile(outfile,"recreate")
     
     sum_tree = ROOT.TTree("ProcSummary","Some meta information")
-    sum_tree.Branch('raw_rate', raw_rate, 'raw_rate/D')
-    sum_tree.Branch('pvalid_rate', pvalid_rate, 'pvalid_rate/D')
+    sum_tree.Branch('trigd_rate', trigd_rate, 'trigd_rate/D')
     sum_tree.Branch('allsinglesnum', allsinglesnum, 'allsinglesnum/I')
     sum_tree.Branch('validpairnum', validpairnum, 'validpairnum/I')
     sum_tree.Branch('validsinglesnum', validsinglesnum, 'validsinglesnum/I')
@@ -144,8 +141,7 @@ def getBackgroundPairs(cutdict=None,rootfiles=[],outfile="background_output.root
     cut_tree = ROOT.TTree("AppliedCuts","Cuts applied and some meta information")
     cut_tree = st.fillSumWithCuts(cut_tree,cutdict)
 
-    pvalid_rate[0] = VALIDRATE
-    raw_rate[0] = RAW_RATE
+    trigd_rate[0] = TRIGDRATE
 
     t_root = ROOT.TTree("Output","Combined Prompt & Delayed candidates from Background MC")
     t_root.Branch('z_p',      z_p,   'z_p/D')
@@ -200,8 +196,8 @@ def getBackgroundPairs(cutdict=None,rootfiles=[],outfile="background_output.root
             print("ENTRYNUM: " + str(entrynum))
 
         #load a new event into our buffer
-        Buffer,totaltime = __loadNewEvent(Buffer,Bkg_rates_validfits,
-                Bkg_entrynums,Bkg_files,VALIDRATE,totaltime)
+        Buffer,totaltime = __loadNewEvent(Buffer,Bkg_rates_triggered,
+                Bkg_entrynums,Bkg_files,TRIGDRATE,totaltime)
         entrynum+=1
 
         #Remove events at start of buffer outside the time width range

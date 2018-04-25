@@ -13,80 +13,45 @@ def GetEntryLengths(rootfile_list):
         EntryLengths.append(entrylength)
     return np.array(EntryLengths)
 
-def GetEfficiency_SingleFile(rootfile):
-    '''
-    Returns the fraction of events generated that passed the preliminary
-    cuts for the prompt event.  The specs on the cuts defined can be found
-    in the runSummary tree of these files.
-    '''
-    #initialize memory for branch data
-    rootfile.cd()
-    frunSummary = rootfile.Get('runSummary')
-    totprompts = 0
-    totevents = 0
-    for i in xrange(frunSummary.GetEntries()):
-        frunSummary.GetEntry(i)
-        totprompts += float(frunSummary.potential_prompts)
-        totevents += float(frunSummary.nEvents)
-    valid_efficiency = (float(totprompts)/float(totevents))
-    return valid_efficiency
-
-#Make a function that grabs a particular entry from a root file given to it.
-def GetEfficiency(rootfile_list):
-    '''Returns the number of events that passed the preliminary cuts
-    used when generating/keeping data'''
-    totprompts = 0.0
-    totevents = 0.0
-    for f in rootfile_list:
-        f.cd()
-        frunSummary = f.Get('runSummary')
-        tot_rateHz = 0.0
-        for i in xrange(frunSummary.GetEntries()):
-            frunSummary.GetEntry(i)
-            totprompts += float(frunSummary.potential_prompts)
-            totevents += float(frunSummary.nEvents)
-    efficiency = totprompts/totevents
-    return efficiency
-
-def GetRates_Valids(rootfile_list):
-    #initialize memory for branch data
+def GetRates_Triggered(rootfile_list,ratedict):
+    '''Takes in a list of root files and background/signal ratedict output from
+    lib/RootReader.py.  Returns an array of the rates for events that caused at
+    least 1 PMT to fire (these are the only events saved to WATCHMAKERS outputs)'''
+    if ratedict is None:
+        print("NO RATE INFORMATION AVAILABLE FOR ANY FILES.  RETURNING -1's")
+        return -1 * np.ones(len(rootfile_list))
+    
     ValidCandidate_rates = []
     for f in rootfile_list:
-        f.cd()
-        frunSummary = f.Get('runSummary')
-        totprompts = 0
-        totevents = 0
-        tot_rateHz = 0.0
-        for i in xrange(frunSummary.GetEntries()):
-            frunSummary.GetEntry(i)
-            try:
-            	tot_rateHz += float(frunSummary.rateHz)
-            	totprompts += float(frunSummary.potential_prompts)
-            	totevents += float(frunSummary.nEvents)
-        	valid_rate = (tot_rateHz/float(frunSummary.GetEntries())) * \
-                        ((totprompts)/ \
-            	        (totevents))
-                ValidCandidate_rates.append(valid_rate)
-            except AttributeError:
-                print("FILE %s HAS NO RATE INFORMATION. CONTINUING"%(str(f)))
-    if len(ValidCandidate_rates) == 0:
-        ValidCandidate_rates.append(0.0)	
+        trig_rateHz = None
+        for sourcetype in ratedict:
+            if sourcetype in str(f):
+                for isotope in ratedict[source]:
+                    if isotope in str(f):
+                        #Found the right rate
+                        trig_rateHz = ratedict[sourcetype][isotope] 
+        
+        if trig_rateHz is None:
+            print("RATE NOT FOUND FOR BACKGROUND FILE %s.  SETTING RATE TO -1")
+            ValidCandidate_rates.append(-1)
+            continue
+        ValidCandidate_rates.append(trig_rateHz)
+        continue
+        #FIXME: use the subEventTally here to correct events? I don't think so..
+        #f.cd()
+        #frunSummary = f.Get('runSummary')
+        #tottriggered = 0
+        #totevents = 0
+        #for i in xrange(frunSummary.GetEntries()):
+        #    frunSummary.GetEntry(i)
+        #    try:
+        #    	tottriggered += float(frunSummary.QUEES)
+        #    	totevents += float(frunSummary.nEvents)
+        # 	trig_rate = (trig_rateHz/float(frunSummary.GetEntries())) * \
+        #                 ((tottriggered)/ \
+        #     	          (totevents))
+        #       Triggered_rates.append(trig_rate)
+        #    except AttributeError:
+        #        print("FILE %s HAS NO RATE INFORMATION. CONTINUING"%(str(f)))
     return np.array(ValidCandidate_rates)
-
-def GetRates_Raw(rootfile_list):
-    #initialize memory for branch data
-    Raw_rates = []
-    for f in rootfile_list:
-        f.cd()
-        tot_rateHz = 0.0
-        frunSummary = f.Get('runSummary')
-        for i in xrange(frunSummary.GetEntries()):
-            frunSummary.GetEntry(i)
-            try:
-                tot_rateHz += float(frunSummary.rateHz)
-            except:
-                print("FILE %s HAS NO RATEHZ IN RUNSUMMARY. CONTINUING"%str(f))
-         rateHz = tot_rateHz/float(frunSummary.GetEntries())
-        Raw_rates.append(rateHz)
-    return np.array(Raw_rates)
 

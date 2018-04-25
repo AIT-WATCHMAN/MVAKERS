@@ -6,6 +6,7 @@ print("LOADED ALL")
 import lib.argparser as ap
 import lib.TMVAGui.GUIRun as tvag
 import lib.utils.dbutils as du
+import lib.utils.rateparser as rp
 import lib.TMVAFactory as tf
 import lib.make_signal_singles as ss
 import lib.make_signal_pairs as sp
@@ -80,7 +81,11 @@ if __name__ == '__main__':
                 "--halfHeight",HALFHEIGHT,"--shieldThick",SHIELDTHICK,"-C",PC]
         subprocess.call(rate_command)
         subprocess.call(["mv","-f","%s/*%s.txt"%(mainpath,str(PC)),OUTDIR])
-        print("------ESTIMATED BACKGROUNDS SAVE TO OUTPUT DIR-------")
+        print("------ESTIMATED BACKGROUND RATES SAVED TO OUTPUT DIR-------")
+        
+        print("------OPENING BACKGROUND RATES FILE, BUILD RATE DICTIONARY------")
+        with open("%s/rate_*.txt","r") as f:
+            ratedict = rp.ParseRateFile(f)
 
 	print("------BUILDING SIGNAL AND BACKGROUND FILES------")
         time.sleep(2)
@@ -142,17 +147,17 @@ if __name__ == '__main__':
         #As well as efficiencies post-cuts given to the TMVA
         if SINGLES is not None:
             print("PREPARING SINGLE SIGNAL NTUPLE FILES NOW...")
-            ss.getSignalSingles(cutdict=cutdict,
+            ss.getSignalSingles(rates=ratedict,cutdict=cutdict,
                     rootfiles=sigrootfiles,outfile=sout)
             print("SIGNAL FILES COMPLETE.  PREPARING SINGLE BKG. NTUPLES...") 
-            bs.getBackgroundSingles(cutdict=cutdict,
+            bs.getBackgroundSingles(rates=ratedict,cutdict=cutdict,
                     rootfiles=bkgrootfiles,outfile=bout)
         if PAIRS is True:
             print("PREPARING PAIRED SIGNAL NTUPLE FILES NOW...")
-            sp.getSignalPairs(cutdict=cutdict, 
+            sp.getSignalPairs(rates=ratedict,cutdict=cutdict, 
                     rootfiles=sigrootfiles,outfile=sout,max_entries=MAXSIGNALEV)
             print("SIGNAL FILES COMPLETE.  PREPAIRING PAIR BKG. NTUPLES...")
-            bp.getBackgroundPairs(cutdict=cutdict,
+            bp.getBackgroundPairs(rates=ratedict, cutdict=cutdict,
                     rootfiles=bkgrootfiles,outfile=bout,max_entries=MAXBKGEV)
         print("SIGNAL AND OUTPUT FILES SAVED TO %s" % OUTDIR)
 
