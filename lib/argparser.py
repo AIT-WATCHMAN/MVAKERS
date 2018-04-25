@@ -43,7 +43,7 @@ parser.add_argument('--halfHeight', dest='HALFHEIGHT', action='store', type=floa
         help='Define the height of the WATCHMAN tank in mm')
 parser.add_argument('--shieldThick', dest='SHIELDTHICK', action='store', type=float,
         help='Distance from tank to PMT frame in mm')
-parser.add_argument('--tankRad', dest='TANKRADIUS', action='store', type=float,
+parser.add_argument('--tankRadius', dest='TANKRADIUS', action='store', type=float,
         help='Radius of tank in mm')
 ##--------------------ADDITIONAL CUTS TO USE PRE-MVA-------------------##
 parser.add_argument('--zcut', dest='ZCUT', action='store', type=float,

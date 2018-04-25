@@ -216,7 +216,7 @@ def getBackgroundPairs(ratedict=None,cutdict=None,rootfiles=[],outfile="backgrou
         eventvalid = True
 
 	#Check if we've exhausted a MC file's data yet
-        if Buffer["entrynums"][len(Buffer["entrynums"])-1] == \
+        if Buffer["entrynums"][len(Buffer["entrynums"])-1] >= \
                 Delayedtree.GetEntries():
             print("A BACKGROUND FILE WAS DEPLETED")
             break

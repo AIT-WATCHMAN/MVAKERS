@@ -1,7 +1,6 @@
-from watchmakers.load import *
+#from watchmakers.load import *
 #from watchmakers.sensitivity import findRate
 
-print("LOADED ALL")
 
 import lib.argparser as ap
 import lib.TMVAGui.GUIRun as tvag
@@ -38,6 +37,12 @@ PC=args.PHOTOCOVERAGE
 JNUM=args.JNUM
 OUTDIR=args.OUTDIR+'/results_%i' % (JNUM)
 
+#Specifications of tank used to calculate rates/choose MC files
+SHIELDTHICK=args.SHIELDTHICK
+TANKRADIUS=args.TANKRADIUS
+HALFHEIGHT=args.HALFHEIGHT
+
+
 #Cuts applied if value is not None
 TIMETHRESH=args.TIMETHRESH
 INTERDIST=args.INTERDIST
@@ -49,7 +54,7 @@ if not os.path.exists(OUTDIR):
 if BUILD is True and os.path.exists(OUTDIR) is True:
     print("WARNING: YOU ARE BUILDING SIGNAL/BKG FILES TO AN EXISTING DIRECTORY.")
     print("EXISTANT DATA IN THE DIRECTORY WILL BE DELETED IF YOU PROCEED")
-    time.sleep(3)
+    time.sleep(2)
 
 #TODO:
 #  - Need to make the OUTDIR that everything will be saved to.
@@ -67,8 +72,8 @@ if __name__ == '__main__':
         sys.exit(0)
 
     #FIXME: Have these as a toggle flag?  Or in config json? 
-    MAXSIGNALEV = 100000
-    MAXBKGEV = 1000000
+    MAXSIGNALEV = 10000
+    MAXBKGEV = 10000
     sout = "%s/signal.root" % (OUTDIR)
     bout = "%s/background.root" % (OUTDIR)
     mvaout = "%s/TMVA_output.root" % (OUTDIR)
@@ -76,16 +81,23 @@ if __name__ == '__main__':
 	
     if BUILD is True:
         print("----USING WATCHMAKERS TO ESTIMATE SIG/BKG RATES------")
-        time.sleep(2)
-        rate_command = ["watch","--findRate","--newVers","--tankRad",TANKRADIUS,\
-                "--halfHeight",HALFHEIGHT,"--shieldThick",SHIELDTHICK,"-C",PC]
+        #FIXME: I don't like this hardcoded at all...
+        rate_command = ["python", "/usr/gapps/adg/geant4/rat_pac_and_dependency/watchmakers/watchmakers.py","--newVers","--findRate","--tankRadius",str(TANKRADIUS),\
+                "--halfHeight",str(HALFHEIGHT),"--shieldThick",str(SHIELDTHICK),"-C",PC]
         subprocess.call(rate_command)
-        subprocess.call(["mv","-f","%s/*%s.txt"%(mainpath,str(PC)),OUTDIR])
+        ratefiles_inmain = glob.glob("%s/*%s.txt"%(mainpath,str(PC)))
+        if len(ratefiles_inmain) > 1:
+            print("WARNING: POSSIBLE RACE CONDITION WITH RATEFILES IF RUNNING MULTIPLE JOBS AT ONCE.\n" +\
+                    "CONTACT TEAL ABOUT MODIFYING THE FINDRATE FUNCTION IN WATCHMAKERS TO RESOLVE THIS.") 
+        for rf in ratefiles_inmain:
+            moverate_command = ["mv","-f", rf,OUTDIR]
+            subprocess.call(moverate_command)
         print("------ESTIMATED BACKGROUND RATES SAVED TO OUTPUT DIR-------")
         
         print("------OPENING BACKGROUND RATES FILE, BUILD RATE DICTIONARY------")
-        with open("%s/rate_*.txt","r") as f:
-            ratedict = rp.ParseRateFile(f)
+        ratefiles_inoutdir = glob.glob("%s/rate_*.txt"%(OUTDIR))
+        with open(str(ratefiles_inoutdir[0]),"r") as f:
+            rates = rp.ParseRateFile(f)
 
 	print("------BUILDING SIGNAL AND BACKGROUND FILES------")
         time.sleep(2)
@@ -102,7 +114,7 @@ if __name__ == '__main__':
             type_candidates = glob.glob("%s/%s/*%s*" % (DATADIR,PC,btype))
             for candidate in type_candidates:
                 if "CHAIN" in candidate:
-                    bkgrootfiles+=candidate
+                    bkgrootfiles.append(candidate)
 
         if DEBUG is True:
             print("BKGFILES BEING USED: " + str(bkgrootfiles))
@@ -147,17 +159,17 @@ if __name__ == '__main__':
         #As well as efficiencies post-cuts given to the TMVA
         if SINGLES is not None:
             print("PREPARING SINGLE SIGNAL NTUPLE FILES NOW...")
-            ss.getSignalSingles(rates=ratedict,cutdict=cutdict,
+            ss.getSignalSingles(ratedict=rates,cutdict=cutdict,
                     rootfiles=sigrootfiles,outfile=sout)
             print("SIGNAL FILES COMPLETE.  PREPARING SINGLE BKG. NTUPLES...") 
-            bs.getBackgroundSingles(rates=ratedict,cutdict=cutdict,
+            bs.getBackgroundSingles(ratedict=rates,cutdict=cutdict,
                     rootfiles=bkgrootfiles,outfile=bout)
         if PAIRS is True:
             print("PREPARING PAIRED SIGNAL NTUPLE FILES NOW...")
-            sp.getSignalPairs(rates=ratedict,cutdict=cutdict, 
+            sp.getSignalPairs(ratedict=rates,cutdict=cutdict, 
                     rootfiles=sigrootfiles,outfile=sout,max_entries=MAXSIGNALEV)
             print("SIGNAL FILES COMPLETE.  PREPAIRING PAIR BKG. NTUPLES...")
-            bp.getBackgroundPairs(rates=ratedict, cutdict=cutdict,
+            bp.getBackgroundPairs(ratedict=rates, cutdict=cutdict,
                     rootfiles=bkgrootfiles,outfile=bout,max_entries=MAXBKGEV)
         print("SIGNAL AND OUTPUT FILES SAVED TO %s" % OUTDIR)
 
@@ -181,7 +193,7 @@ if __name__ == '__main__':
             methoddict = json.load(f)
         
         if DEBUG is True:
-            print("VARIABLES BEING FED IN TO MVA: " + str(vardict))
+            print("VARIABLES BEING FED IN TO MVA: " + str(vsdict))
             print("METHODS BEING FED IN TO MVA: " + str(methoddict))
         print("RUNNING TMVA ON SIGNAL AND BACKGROUND FILES NOW...")
         mvaker = tf.TMVARunner(signalfile=sout, backgroundfile=bout,

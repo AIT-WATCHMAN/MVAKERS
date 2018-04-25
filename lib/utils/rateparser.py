@@ -8,7 +8,7 @@ def ParseRateFile(rate_file):
         print("WARNING: Rate file is longer than typical output of WATCHMAKERS.")
     dataline = ratelines[0]
     data = dataline.split(" ")
-    ratedict = {"IBD_rate":data[0], "WV": {"Rn222": data[1]}, "PMT": {"U238":data[2],\
-            "Th232": data[3], "K40":data[4]}}
+    ratedict = {"IBD_rate":float(data[0]), "WaterVolume": {"222Rn": float(data[1])}, "PMT": {"238U":float(data[2]),\
+            "232Th": float(data[3]), "40K":float(data[4])}}
     return ratedict
 	

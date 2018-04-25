@@ -4,9 +4,12 @@ from ROOT import TChain, TFile, gROOT
 from sys import stdout
 
 def shootTimeDiff(rate):
-    #Given an average rate in Hz, shoot from an exponential distribution for the
-    #Time to next event.  Return time in nanoseconds.
-    return np.random.exponential(1./float(rate))*1.0E9
+    if rate< 0:
+        return -9999  
+    else:
+        #Given an average rate in Hz, shoot from an exponential distribution for the
+        #Time to next event.  Return time in nanoseconds.
+        return np.random.exponential(1./float(rate))*1.0E9
 
 def shootTimeDiff_Slow(raw_freq):
     #Assume your process is poisson with an occurence of raw_freq/msec
