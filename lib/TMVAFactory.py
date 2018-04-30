@@ -125,14 +125,8 @@ class TMVARunner(object):
                     #TODO: Have defaults in dictionary in DB, put mods in mdict  
                     specs = self.mdict[method]["specs"]
                     print("SPECS: " + str(specs))
-            elif self.mdict[method]["type"] == "kBDT":
-                specs = "!H:!V:NTrees=1000:MinNodeSize=2.5%:MaxDepth=3:"+\
-                        "BoostType=AdaBoost:AdaBoostBeta=0.5:UseBaggedBoost:"+\
-                        "BaggedSampleFraction=0.5:SeparationType=GiniIndex:"+\
-                        "ncuts=20"
             else:
-                print("Method %s not supported in this class yet." % (self.mdict[method]["type"]))
-                continue
+                specs = self.mdict[method]["specs"]
             print("BOOKING..." + str(self.mdict[method]["type"]))
             factory.BookMethod(getattr(ROOT.TMVA.Types,
                 str(self.mdict[method]["type"])),str(method),str(specs))

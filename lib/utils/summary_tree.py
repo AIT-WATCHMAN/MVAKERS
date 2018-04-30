@@ -11,23 +11,9 @@ def fillSumWithCuts(cut_tree,cutdict):
         for cuttype in cutdict:
             if len(cuttype) > 0:
                 for cut in cutdict[cuttype]:
-                    if cut=="interevent_dist" and \
-                            cutdict[cuttype][cut] is not None:
-                        interdistcut = np.zeros(1,dtype=float64)
-                        cut_tree.Branch('interdistcut', interdistcut, 'interdistcut/D')
-                        interdistcut[0] = float(cutdict[cuttype][cut])
-                    if cut=="interevent_time" and \
-                            cutdict[cuttype][cut] is not None:
-                        intertimecut = np.zeros(1,dtype=float64)
-                        cut_tree.Branch('intertimecut', intertimecut, 'intertimecut/D')
-                        intertimecut[0] = float(cutdict[cuttype][cut])
-                    if cut=="r" and cutdict[cuttype][cut] is not None:
-                        rcut = np.zeros(1,dtype=float64)
-                        cut_tree.Branch('rcut', rcut, 'rcut/D')
-                        rcut[0] = float(cutdict[cuttype][cut])
-                    if cut=="z" and cutdict[cuttype][cut] is not None:
-                        zcut = np.zeros(1,dtype=float64)
-                        cut_tree.Branch('zcut',zcut, 'zcut/D')
-                        zcut[0] = float(cutdict[cuttype][cut])
-    cut_tree.Fill()
+                    if cutdict[cuttype][cut] is not None:
+                        newcut = np.zeros(1, dtype=float64)
+                        cut_tree.Branch(cut, newcut, '%s/D'%(cut))
+                        newcut[0] = float(cutdict[cuttype][cut])
+                        cut_tree.Fill()
     return cut_tree

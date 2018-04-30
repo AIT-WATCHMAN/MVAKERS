@@ -72,8 +72,8 @@ if __name__ == '__main__':
         sys.exit(0)
 
     #FIXME: Have these as a toggle flag?  Or in config json? 
-    MAXSIGNALEV = 10000
-    MAXBKGEV = 10000
+    MAXSIGNALEV = 100000
+    MAXBKGEV = 10000000
     sout = "%s/signal.root" % (OUTDIR)
     bout = "%s/background.root" % (OUTDIR)
     mvaout = "%s/TMVA_output.root" % (OUTDIR)

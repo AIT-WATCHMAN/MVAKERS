@@ -23,11 +23,16 @@ def GetRates_Triggered(rootfile_list,ratedict):
     trigrates_perfile = []
     for f in rootfile_list:
         raw_rateHz = None
+        thissource = "None"
+        thisiso = "None"
         for sourcetype in ratedict:
             if sourcetype in str(f):
                 for isotope in ratedict[sourcetype]:
                     if isotope in str(f):
-                        raw_rateHz = ratedict[sourcetype][isotope] 
+                        raw_rateHz = ratedict[sourcetype][isotope]
+                        thissource = sourcetype
+                        thisiso = isotope
+                        break
         if raw_rateHz is None:
             print("RATE NOT FOUND FOR BACKGROUND FILE %s.  SETTING RATE TO -1")
             trigrates_perfile.append(-1)
@@ -36,19 +41,21 @@ def GetRates_Triggered(rootfile_list,ratedict):
         #Now, we scale the raw rate by the fraction of events that
         #had one tube hit
         f.cd()
-        frunSummary = f.Get('runSummary')
-        frunSummary.GetEntry(0)
         tot_generated = 0.0
-        fdata = f.Get("data")
-        tot_trigged = 0.0
+        frunSummary = None
         try:
-            tot_generated = float(frunSummary.nEvents)
-            tot_trigged = float(fdata.GetEntries())
+            frunSummary = f.Get('runSummary')
         except AttributeError:
             print("FILE %s HAS NO RUN SUMMARY. RATE SET TO -1"%(str(f)))
             trigrates_perfile.append(-1)
             continue
+        for i in xrange(frunSummary.GetEntries()):
+            frunSummary.GetEntry(i)
+            tot_generated+= float(frunSummary.nEvents) 
+        fdata = f.Get("data")
+        tot_trigged = float(fdata.GetEntries())
         fraction_trigged = tot_trigged/tot_generated
+        print("FRACTION_TRIGGERED in %s %s: %s" %(thisiso,thissource, str(fraction_trigged)))
         trigrates_perfile.append(raw_rateHz * fraction_trigged)
     print("FINAL TRIG RATES: " + str(trigrates_perfile))
     return np.array(trigrates_perfile)

@@ -27,4 +27,4 @@ export G4NEUTRONHP_USE_ONLY_PHOTONEVAPORATION=1
 
 #Go to the directory containing the MVATools, then run them
 cd $RUNDIR
-python $RUNDIR/main.py --ibd --pc 25pct --tankRadius ${TANKRADIUS}. --shieldThick ${SHIELDTHICK}. --halfHeight ${HALFHEIGHT}. --datadir $DATADIR --buildSB --MVA --debug --jobnum $SHIELDTHICK
+python $RUNDIR/main.py --ibd --pc 25pct --tankRadius ${TANKRADIUS}. --shieldThick ${SHIELDTHICK}. --halfHeight ${HALFHEIGHT}. --datadir $DATADIR --MVA --debug --jobnum 3074

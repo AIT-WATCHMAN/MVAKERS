@@ -31,7 +31,7 @@ import utils.RootReader as rr
 import utils.summary_tree as st
 
 
-def __loadNewEvent(buff,Bkg_rates_triggered,Bkg_entrynums,Bkg_files,TRIGDRATE,totaltime):
+def __loadNewEvent(buff,Bkg_rates_triggered,Bkg_entrynums,Bkg_chains,TRIGDRATE,totaltime):
     '''
     Using the loaded-in background files, shoot the next event's information,
     including file it's in, it's entry number, and the time since last event
@@ -43,7 +43,7 @@ def __loadNewEvent(buff,Bkg_rates_triggered,Bkg_entrynums,Bkg_files,TRIGDRATE,to
                 np.sum(Bkg_rates_triggered)):
             Bkg_entrynums[i]+=1
             buff["entrynums"].append(int(Bkg_entrynums[i]))
-            buff["files"].append(Bkg_files[i])
+            buff["chains"].append(Bkg_chains[i])
             shottime = eu.shootTimeDiff(TRIGDRATE)
             totaltime= totaltime + shottime
             buff["times"].append(shottime)
@@ -55,7 +55,7 @@ def __deleteOutOfWindow(buff,TIMETHRESH):
     while not allinwindow:
     	if sum(buff["times"][1:len(buff["times"])]) > TIMETHRESH:
             del buff["times"][0]
-            del buff["files"][0]
+            del buff["chains"][0]
             del buff["entrynums"][0]
         else:
             allinwindow=True
@@ -63,19 +63,22 @@ def __deleteOutOfWindow(buff,TIMETHRESH):
 
 def __deleteNewestEntry(buff):
     del buff["times"][len(buff["times"]) -1]
-    del buff["files"][len(buff["files"]) -1]
-    del buff["entrynums"][len(buff["files"]) -1]
+    del buff["chains"][len(buff["chains"]) -1]
+    del buff["entrynums"][len(buff["entrynums"]) -1]
     return buff
 
 
 def getBackgroundPairs(ratedict=None,cutdict=None,rootfiles=[],outfile="background_output.root",datatree='data',max_entries=9E15):
     #For a list of given files, append the ROOT file object to Bkg_files list 
     print("ROOTFILES BEING FED IN: " + str(rootfiles)) 
+    Bkg_chains = []
     Bkg_files = []
     for f in rootfiles:
         rfile = ROOT.TFile(f, "READ")
+        rchain = rfile.Get(datatree)
         Bkg_files.append(rfile)
-    
+        Bkg_chains.append(rchain)
+     
     #Want to shoot the rates of events that could be a prompt candidate.  Only want
     #To shoot using rates_validfits since only valid events are filled into the ntuple
     Bkg_rates_triggered = rr.GetRates_Triggered(Bkg_files,ratedict)
@@ -181,7 +184,7 @@ def getBackgroundPairs(ratedict=None,cutdict=None,rootfiles=[],outfile="backgrou
     #initialize a buffer dictionary that holds the information of files and
     #events to make pairs from
     Buffer = {}
-    Buffer["files"] = []
+    Buffer["chains"] = []
     Buffer["entrynums"] = []
     Buffer["times"] = []
     
@@ -192,12 +195,12 @@ def getBackgroundPairs(ratedict=None,cutdict=None,rootfiles=[],outfile="backgrou
     vsnum = 0
     totaltime = 0.0
     while (pairnum < max_entries):
-        if float(entrynum) / 20000.0 == int(entrynum / 20000.0):
+        if float(entrynum) / 2000.0 == int(entrynum / 2000.0):
             print("ENTRYNUM: " + str(entrynum))
 
         #load a new event into our buffer
         Buffer,totaltime = __loadNewEvent(Buffer,Bkg_rates_triggered,
-                Bkg_entrynums,Bkg_files,TRIGDRATE,totaltime)
+                Bkg_entrynums,Bkg_chains,TRIGDRATE,totaltime)
         entrynum+=1
 
         #Remove events at start of buffer outside the time width range
@@ -210,14 +213,13 @@ def getBackgroundPairs(ratedict=None,cutdict=None,rootfiles=[],outfile="backgrou
 
         #loop through and match this delayed event with all previous prompts
         delayedindex = len(Buffer["entrynums"]) - 1
-        Delayedfile = Buffer["files"][delayedindex]
-        Delayedtree = Delayedfile.Get(datatree)
-        Delayedtree.GetEntry(Buffer["entrynums"][delayedindex])
+        Delayedchain = Buffer["chains"][delayedindex]
+        Delayedchain.GetEntry(Buffer["entrynums"][delayedindex])
         eventvalid = True
 
 	#Check if we've exhausted a MC file's data yet
         if Buffer["entrynums"][len(Buffer["entrynums"])-1] >= \
-                Delayedtree.GetEntries():
+                Delayedchain.GetEntries():
             print("A BACKGROUND FILE WAS DEPLETED")
             break
 
@@ -225,52 +227,54 @@ def getBackgroundPairs(ratedict=None,cutdict=None,rootfiles=[],outfile="backgrou
         if cutdict is not None and "singles" in cutdict:
             for cut in cutdict["singles"]:
                 if cutdict["singles"][cut] is not None and \
-                        cutdict["singles"][cut] > getattr(Delayedtree,cut):
+                        cutdict["singles"][cut] > getattr(Delayedchain,cut):
                     eventvalid=False
                     break
         if eventvalid is False:
             __deleteNewestEntry(Buffer)
             continue
+        
         #event is valid for given singles cuts
         vsnum+=1
 
         if len(Buffer["entrynums"]) <=1:
             continue
-
+        
+        #Load the delayed event's information
+        Delayedchain.GetEntry(Buffer["entrynums"][delayedindex])
+        nhit_d[0]     = Delayedchain.nhit 
+        x_d[0]       = Delayedchain.x
+        y_d[0]        = Delayedchain.y
+        z_d[0]      = Delayedchain.z
+        r_d[0]        = eu.radius(x_d[0],y_d[0])
+        u_d[0]      = Delayedchain.u
+        v_d[0]      = Delayedchain.v 
+        w_d[0]      = Delayedchain.w 
+        mc_energy_d[0]    = Delayedchain.mc_energy 
+        good_pos_d[0] = Delayedchain.good_pos 
+        good_dir_d[0] = Delayedchain.good_dir 
+        pe_d[0]     = Delayedchain.pe 
+        closestPMT_d[0]  = Delayedchain.closestPMT
+        n9_d[0]  = Delayedchain.n9
+        
+        #Check each previous event in buffer for interevent candidacy
         for i in xrange(delayedindex):
-            Promptfile = Buffer["files"][i]
-            Prompttree = Promptfile.Get(datatree)
-            Prompttree.GetEntry(Buffer["entrynums"][i])
-            nhit_p[0]     = Prompttree.nhit 
-            x_p[0]       = Prompttree.x*1000.0
-            y_p[0]        = Prompttree.y*1000.0
-            z_p[0]      = Prompttree.z*1000.0
+            Promptchain = Buffer["chains"][i]
+            Promptchain.GetEntry(Buffer["entrynums"][i])
+            nhit_p[0]     = Promptchain.nhit 
+            x_p[0]       = Promptchain.x
+            y_p[0]        = Promptchain.y
+            z_p[0]      = Promptchain.z
             r_p[0]        = eu.radius(x_p[0],y_p[0])
-            u_p[0]      = Prompttree.u
-            v_p[0]      = Prompttree.v 
-            w_p[0]      = Prompttree.w 
-            mc_energy_p[0]    = Prompttree.mc_energy 
-            good_pos_p[0] = Prompttree.good_pos 
-            good_dir_p[0] = Prompttree.good_dir 
-            pe_p[0]     = Prompttree.pe 
-            closestPMT_p[0]  = Prompttree.closestPMT*1000.0
-            n9_p[0]  = Prompttree.n9
-            
-            Delayedtree.GetEntry(Buffer["entrynums"][delayedindex])
-            nhit_d[0]     = Delayedtree.nhit 
-            x_d[0]       = Delayedtree.x*1000.0
-            y_d[0]        = Delayedtree.y*1000.0
-            z_d[0]      = Delayedtree.z*1000.0
-            r_d[0]        = eu.radius(x_d[0],y_d[0])
-            u_d[0]      = Delayedtree.u
-            v_d[0]      = Delayedtree.v 
-            w_d[0]      = Delayedtree.w 
-            mc_energy_d[0]    = Delayedtree.mc_energy 
-            good_pos_d[0] = Delayedtree.good_pos 
-            good_dir_d[0] = Delayedtree.good_dir 
-            pe_d[0]     = Delayedtree.pe 
-            closestPMT_d[0]  = Delayedtree.closestPMT*1000.0
-            n9_d[0]  = Delayedtree.n9
+            u_p[0]      = Promptchain.u
+            v_p[0]      = Promptchain.v 
+            w_p[0]      = Promptchain.w 
+            mc_energy_p[0]    = Promptchain.mc_energy 
+            good_pos_p[0] = Promptchain.good_pos 
+            good_dir_p[0] = Promptchain.good_dir 
+            pe_p[0]     = Promptchain.pe 
+            closestPMT_p[0]  = Promptchain.closestPMT
+            n9_p[0]  = Promptchain.n9
             
             #Check for intereventdist cut and fill in interevent dist
             interevent_dist[0] = eu.innerDist(x_p[0], y_p[0],
@@ -286,6 +290,7 @@ def getBackgroundPairs(ratedict=None,cutdict=None,rootfiles=[],outfile="backgrou
                     if pcuts[cut] is not None and \
                             pcuts[cut] < itid_dict[cut]:
                         itid_valid = False
+                        break
             if itid_valid is False:
                 continue
             pair_number[0] = pairnum
