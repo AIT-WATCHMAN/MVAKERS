@@ -1,38 +1,38 @@
 {
     "x": {
         "title": "reconstructed x position",
-        "units": "m",
+        "units": "mm",
         "type": "'F'"
     },
     "y": {
         "title": "reconstructed y position",
-        "units": "m",
+        "units": "mm",
         "type": "'F'"
     },
     "z": {
         "title": "reconstructed z position",
-        "units": "m",
+        "units": "mm",
         "type": "'F'"
     },
     "r": {
         "title": "reconstructed cylindrical radius",
-        "units": "m",
+        "units": "mm",
         "type": "'F'"
     },
     "n9": {
         "title": "n9 classifier",
         "units": "no units",
-        "type": "'F'"
+        "type": "'I'"
     },
     "closestPMT": {
         "title": "distance to closest PMT from vertex",
-        "units": "meters",
+        "units": "mm",
         "type": "'F'"
     },
     "nhit": {
         "title": "number of PMTs hit",
         "units": "no units",
-        "type": "'F'"
+        "type": "'I'"
     },
     "pe": {
         "title": "photoelectron count",
