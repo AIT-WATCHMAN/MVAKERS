@@ -25,13 +25,14 @@ from decimal import *
 
    
 def getSignalSingles(ratedict=None,cutdict=None,rootfiles=[],outfile="signal_output.root",datatree='data',max_entries=9E15):
-    rfiles = []
+    print("ROOTFILES BEING FED IN: " + str(rootfiles)) 
+    sigchain = ROOT.TChain(datatree)
     for f in rootfiles:
-        rfiles.append(ROOT.TFile(f,"read"))
-    
+       sigchain.Add(f)
+         
     '''Set up variables for root tree'''
-    n9_rf        = np.zeros(1,dtype=float64)
-    nhit_rf      = np.zeros(1,dtype=float64)
+    n9_rf        = np.zeros(1,dtype=int)
+    nhit_rf      = np.zeros(1,dtype=int)
     pe_rf     = np.zeros(1,dtype=float64)
     event_number_rf        = np.zeros(1,dtype=float64)
     mc_energy_rf    = np.zeros(1,dtype=float64)
@@ -52,10 +53,12 @@ def getSignalSingles(ratedict=None,cutdict=None,rootfiles=[],outfile="signal_out
     
     '''Set up the tree and branch of variables one wishes to save'''
     sum_tree = ROOT.TTree("ProcSummary","Summary of metadata")
-    signal_acceptance = np.zeros(1,dtype=float64)
     IBDrate = np.zeros(1,dtype=float64)
+    allsinglesnum = np.zeros(1,dtype=int)
+    validsinglesnum = np.zeros(1,dtype=int)
     sum_tree.Branch('IBDrate', IBDrate, 'IBDrate/D')
-    sum_tree.Branch('signal_acceptance',signal_acceptance, 'signal_acceptance/D')
+    sum_tree.Branch('allsinglesnum', allsinglesnum, 'allsinglesnum/I')
+    sum_tree.Branch('validsinglesnum', validsinglesnum, 'validsinglesnum/I')
     IBDrate[0] = ratedict["IBD_rate"]
 
     cut_tree = ROOT.TTree("AppliedCuts","Cuts applied")
@@ -65,8 +68,8 @@ def getSignalSingles(ratedict=None,cutdict=None,rootfiles=[],outfile="signal_out
     #Prep our data tree that will hold event candidate information
     t_root = ROOT.TTree("Output","Singles File Composed of all backgrounds")
     t_root.Branch('pe',       pe_rf,    'pe/D')
-    t_root.Branch('nhit',       nhit_rf,    'nhit/D')
-    t_root.Branch('n9',      n9_rf,   'n9/D')
+    t_root.Branch('nhit',       nhit_rf,    'nhit/I')
+    t_root.Branch('n9',      n9_rf,   'n9/I')
 
     t_root.Branch('event_number',        event_number_rf,     'event_number/D')
     t_root.Branch('mc_energy',        mc_energy_rf ,      'mc_energy/D')
@@ -87,48 +90,49 @@ def getSignalSingles(ratedict=None,cutdict=None,rootfiles=[],outfile="signal_out
     entries_viewed = 0
 
     while (entrynum < max_entries):
-        for rfile in rfiles:
-            thisfile_entrynum = 0
-            sigtree = rfile.Get(datatree)
-            if float(entrynum) / 20000.0 == int(entrynum / 20000.0):
-                print("ENTRYNUM: " + str(entrynum))
-            entries_viewed+=1
-            thisfile_entrynum+=1
-            
-            #Check if the file is depleted
-            if thisfile_entrynum >= sigtree.GetEntries():
-                print("SIGNAL FILE %s DEPLETED.  MOVING TO NEXT, IF ANY MORE" % thisevent_bkgfile.GetName())
-                break
-    
-            sigtree.GetEntry(thisfile_entrynum)
-            #Check if this passes the input cuts
-            if "singles" in cutdict:
-                for cut in cutdict["singles"]:
-                    if cutdict["singles"][cut] is not None and \
-                            cutdict["singles"][cut] > getattr(dtree,cut):
-                        continue
-            
-            #It passed cuts; fill entry into output file
-            pe_rf[0] = sigtree.pe 
-            n9_rf[0] = sigtree.n9
-    
-            nhit_rf[0] = sigtree.nhit
-            mc_energy_rf[0] = sigtree.mc_energy
-            good_pos_rf[0] = sigtree.good_pos
-            u_rf[0] = sigtree.u
-            v_rf[0] = sigtree.v
-            w_rf[0] = sigtree.w
-            x_rf[0] = sigtree.x
-            y_rf[0] = sigtree.y
-            r_rf[0] = np.sqrt(sigtree.x**2 + sigtree.y**2)
-            z_rf[0] = sigtree.z
-            good_dir_rf[0] = sigtree.good_dir
-            closestPMT_rf[0] = sigtree.closestPMT
-            t_root.Fill()
-            entrynum+=1
+        if float(entrynum) / 20000.0 == int(entrynum / 20000.0):
+            print("ENTRYNUM: " + str(entrynum))
+        entries_viewed+=1
+        
+        #Check if the chain is depleted
+        if entries_viewed >= sigchain.GetEntries():
+            print("SIGNAL CHAIN DEPLETED.  DONE")
+            break
+        
+        eventvalid=True
+        sigchain.GetEntry(entries_viewed)
+        #Check if this passes the input cuts
+        if cutdict is not None and "singles" in cutdict:
+            for cut in cutdict["singles"]:
+                if cutdict["singles"][cut] is not None and \
+                        cutdict["singles"][cut] > getattr(sigchain,cut):
+                    eventvalid=False
+                    break
+        if eventvalid is False:
+            continue
+        
+        #It passed cuts; fill entry into output file
+        pe_rf[0] = sigchain.pe 
+        n9_rf[0] = sigchain.n9
+
+        nhit_rf[0] = sigchain.nhit
+        mc_energy_rf[0] = sigchain.mc_energy
+        good_pos_rf[0] = sigchain.good_pos
+        u_rf[0] = sigchain.u
+        v_rf[0] = sigchain.v
+        w_rf[0] = sigchain.w
+        x_rf[0] = sigchain.x
+        y_rf[0] = sigchain.y
+        r_rf[0] = np.sqrt(sigchain.x**2 + sigchain.y**2)
+        z_rf[0] = sigchain.z
+        good_dir_rf[0] = sigchain.good_dir
+        closestPMT_rf[0] = sigchain.closestPMT
+        t_root.Fill()
+        entrynum+=1
     #/while(entrynum < max_entries)
 
-    signal_acceptance[0] = float(entrynum)/float(entries_viewed)
+    allsinglesnum[0] = entries_viewed
+    validsinglesnum[0] = entrynum
     f_root.cd()
     t_root.Write()
     sum_tree.Fill()

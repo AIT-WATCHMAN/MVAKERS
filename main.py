@@ -42,20 +42,18 @@ SHIELDTHICK=args.SHIELDTHICK
 TANKRADIUS=args.TANKRADIUS
 HALFHEIGHT=args.HALFHEIGHT
 
-
 #Cuts applied if value is not None
 TIMETHRESH=args.TIMETHRESH
 INTERDIST=args.INTERDIST
 RADIUSCUT=args.RADIUSCUT
 ZCUT=args.ZCUT
 
-if not os.path.exists(OUTDIR):
-    os.makedirs(OUTDIR)
 if BUILD is True and os.path.exists(OUTDIR) is True:
     print("WARNING: YOU ARE BUILDING SIGNAL/BKG FILES TO AN EXISTING DIRECTORY.")
     print("EXISTANT DATA IN THE DIRECTORY WILL BE DELETED IF YOU PROCEED")
     time.sleep(2)
-
+if not os.path.exists(OUTDIR):
+    os.makedirs(OUTDIR)
 #TODO:
 #  - Need to make the OUTDIR that everything will be saved to.
 #  - Load the cuts configuration json.  Any modifications done on
@@ -71,9 +69,11 @@ if __name__ == '__main__':
         print("run 'python main.py --help' for possible analyses\n")
         sys.exit(0)
 
-    #FIXME: Have these as a toggle flag?  Or in config json? 
-    MAXSIGNALEV = 100000
-    MAXBKGEV = 10000000
+    with open("%s/%s" % (configpath,"setup.json"),"r") as f:
+        setupdict = json.load(f)
+    MAXSIGNALEV = setupdict["MAXSIGNALEV"]
+    MAXBKGEV = setupdict["MAXBKGEV"]
+
     sout = "%s/signal.root" % (OUTDIR)
     bout = "%s/background.root" % (OUTDIR)
     mvaout = "%s/TMVA_output.root" % (OUTDIR)
@@ -131,7 +131,7 @@ if __name__ == '__main__':
             print("GETTING SINGLES SIGNAL FILE OF TYPE %s" % (SINGLES))
             if SINGLES=="neutron":
                 suffix="_ibd_n"
-            if SINGLES=="positron":
+            elif SINGLES=="positron":
                 suffix="_ibd_p"
             else:
                 print("SINGLES TYPE GIVEN NOT SUPPORTED.  EXITING")
@@ -160,10 +160,10 @@ if __name__ == '__main__':
         if SINGLES is not None:
             print("PREPARING SINGLE SIGNAL NTUPLE FILES NOW...")
             ss.getSignalSingles(ratedict=rates,cutdict=cutdict,
-                    rootfiles=sigrootfiles,outfile=sout)
+                    rootfiles=sigrootfiles,outfile=sout,max_entries=MAXSIGNALEV)
             print("SIGNAL FILES COMPLETE.  PREPARING SINGLE BKG. NTUPLES...") 
             bs.getBackgroundSingles(ratedict=rates,cutdict=cutdict,
-                    rootfiles=bkgrootfiles,outfile=bout)
+                    rootfiles=bkgrootfiles,outfile=bout,max_entries=MAXBKGEV)
         if PAIRS is True:
             print("PREPARING PAIRED SIGNAL NTUPLE FILES NOW...")
             sp.getSignalPairs(ratedict=rates,cutdict=cutdict, 

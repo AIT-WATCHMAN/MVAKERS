@@ -8,15 +8,13 @@
 #MSUB -d /usr/gapps/adg/geant4/rat_pac_and_dependency/MVATools #dir to run from
 #MSUB -V
 #MSUB           # no more psub commands
-
-SHIELDTHICK=3074
-HALFHEIGHT=10000
-TANKRADIUS=10000
+TANKRADIUS=10000.
+HALFHEIGHT=10000.
+SHIELDTHICKNESS=3074.
 
 
 RPDEPENDS=/usr/gapps/adg/geant4/rat_pac_and_dependency
-RUNDIR=${RPDEPENDS}/MVATools
-DATADIR=/p/lscratche/adg/Watchboy/simplifiedData/rp_sim/apr2018/watchmakers_10mtank/bonsai_root_files_tankRadius_${TANKRADIUS}.000000_halfHeight_${HALFHEIGHT}.000000_shieldThickness_${SHIELDTHICK}.000000
+MERGEDIR=/p/lscratche/adg/Watchboy/simplifiedData/rp_sim/apr2018/watchmakers_10mtank/
 #Source ROOT for python
 source ${RPDEPENDS}/root-v5.34.00-Minuit2-Python/bin/thisroot.sh
 source ${RPDEPENDS}/geant4.10.03/geant4.10.03.p02-build/share/Geant4-10.3.2/geant4make/../../../bin/geant4.sh
@@ -26,5 +24,5 @@ source ${RPDEPENDS}/watchmakers/env_wm.sh
 export G4NEUTRONHP_USE_ONLY_PHOTONEVAPORATION=1
 
 #Go to the directory containing the MVATools, then run them
-cd $RUNDIR
-python $RUNDIR/main.py --ibd --pc 25pct --tankRadius ${TANKRADIUS}. --shieldThick ${SHIELDTHICK}. --halfHeight ${HALFHEIGHT}. --datadir $DATADIR --buildSB --MVA --debug --jobnum 3074
+cd $MERGEDIR
+watch --newVers -M -N 400 --shieldThick ${SHIELDTHICKNESS} --tankRadius ${TANKRADIUS} --halfHeight ${HALFHEIGHT}

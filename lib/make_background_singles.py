@@ -24,27 +24,31 @@ from sys import argv
 from decimal import *
 
 
-def __loadNewEvent(Bkg_rates_validfits,Bkg_entrynums,Bkg_files):
+def __loadNewEvent(Bkg_rates_validfits,Bkg_entrynums,Bkg_chains):
     '''
     From the available background files, shoot what the next event type 
     loaded into the singles fill will be.  Increment this file's entries used.
     '''
     shot =np.random.rand()
     for i in xrange(len(Bkg_rates_validfits)):
-        frac_thisfile = sum(Bkg_rates_validfits[0:i+1]) / np.sum(Bkg_rates_validfits)
-        if shot < frac_thisfile:
+        frac_thischain = sum(Bkg_rates_validfits[0:i+1]) / np.sum(Bkg_rates_validfits)
+        if shot < frac_thischain:
             Bkg_entrynums[i]+=1
             thisentry = (int(Bkg_entrynums[i]))
-            thisfile = Bkg_files[i]
+            thischain = Bkg_chains[i]
             break
-    return thisentry, thisfile
+    return thisentry, thischain
         
 def getBackgroundSingles(ratedict=None,cutdict=None,rootfiles=[],outfile="signal_output.root",datatree='data',max_entries=9E15):
-    Bkg_files = []
     #For a list of given files, 
+    print("ROOTFILES BEING FED IN: " + str(rootfiles)) 
+    Bkg_chains = []
+    Bkg_files = []
     for f in rootfiles:
-        rfile = ROOT.TFile(f, "read")
+        rfile = ROOT.TFile(f, "READ")
+        rchain = rfile.Get(datatree)
         Bkg_files.append(rfile)
+        Bkg_chains.append(rchain)
     
     #Calculate the raw rate and valid rate of backgrounds in given files.
     #Uses metadata from WATCHMAKERS ProcSummary to do this.
@@ -55,8 +59,8 @@ def getBackgroundSingles(ratedict=None,cutdict=None,rootfiles=[],outfile="signal
     print("VALID SINGLE CANDIDATE RATE: " + str(TRIGDRATE))
 
     '''Set up variables for root tree'''
-    n9_rf        = np.zeros(1,dtype=float64)
-    nhit_rf      = np.zeros(1,dtype=float64)
+    n9_rf        = np.zeros(1,dtype=int)
+    nhit_rf      = np.zeros(1,dtype=int)
     pe_rf     = np.zeros(1,dtype=float64)
     mc_energy_rf = np.zeros(1,dtype=float64)
     event_number_rf        = np.zeros(1,dtype=float64)
@@ -78,12 +82,14 @@ def getBackgroundSingles(ratedict=None,cutdict=None,rootfiles=[],outfile="signal
     '''Set up the tree and branch of variables one wishes to save'''
     sum_tree = ROOT.TTree("Summary","Meta information")
     trigd_rate = np.zeros(1,dtype=float64)
-    cut_acc = np.zeros(1,dtype=float64)
-
+    cut_acceptance = np.zeros(1,dtype=float64)
+    allsinglesnum = np.zeros(1,dtype=int)
+    validsinglesnum = np.zeros(1,dtype=int)
     total_time = np.zeros(1,dtype=float64)
     sum_tree.Branch('trigd_rate', trigd_rate, 'trigd_rate/D')
-    sum_tree.Branch('cut_acc', cut_acc, 'cut_acc\D')
-
+    sum_tree.Branch('cut_acceptance', cut_acceptance, 'cut_acceptance/D')
+    sum_tree.Branch('allsinglesnum', allsinglesnum, 'allsinglesnum/I')
+    sum_tree.Branch('validsinglesnum', validsinglesnum, 'validsinglesnum/I')
     sum_tree.Branch('total_time', total_time, 'total_time/D')
    
     trigd_rate[0] = TRIGDRATE
@@ -94,8 +100,8 @@ def getBackgroundSingles(ratedict=None,cutdict=None,rootfiles=[],outfile="signal
 
     t_root = ROOT.TTree("Output","Singles File Composed of all backgrounds")
     t_root.Branch('pe',       pe_rf,    'pe/D')
-    t_root.Branch('nhit',       nhit_rf,    'nhit/D')
-    t_root.Branch('n9',      n9_rf,   'n9/D')
+    t_root.Branch('nhit',       nhit_rf,    'nhit/I')
+    t_root.Branch('n9',      n9_rf,   'n9/I')
 
     t_root.Branch("mc_energy", mc_energy_rf, 'mc_energy/D')
     t_root.Branch('event_number',        event_number_rf,     'event_number/D')
@@ -122,46 +128,52 @@ def getBackgroundSingles(ratedict=None,cutdict=None,rootfiles=[],outfile="signal
         entries_viewed+=1
         
         #Shoot for the next background file and it's next unused entry
-        thisentry, thisevent_bkgfile = __loadNewEvent(Bkg_rates_validfits,\
-                Bkg_entrynums,Bkg_files)
+        thisentry, bkgchain = __loadNewEvent(Bkg_rates_validfits,\
+                Bkg_entrynums,Bkg_chains)
         totaltime = totaltime + eu.shootTimeDiff(TRIGDRATE)
-        thisevent_bkgfile.cd()
-        bkgtree = thisevent_bkgfile.Get(datatree)
 
         #Check if the file is depleted
-        if thisentry >= bkgtree.GetEntries():
-            print("BACKGROUND FILE %s DEPLETED.  FINISHING UP." % thisevent_bkgfile.GetName())
+        if thisentry >= bkgchain.GetEntries():
+            print("A BACKGROUND FILE WAS DEPLETED.  FINISHING UP.")
             break
 
-        bkgtree.GetEntry(thisentry)
+        
+        eventvalid=True
+        
+        bkgchain.GetEntry(thisentry)
         #Check if this passes the input cuts
-        if "singles" in cutdict:
+        if cutdict is not None and "singles" in cutdict:
             for cut in cutdict["singles"]:
-                if cutdict[cut] is not None and \
-                        cutdict[cut] > getattr(dtree,cut):
-                    continue
+                if cutdict["singles"][cut] is not None and \
+                        cutdict["singles"][cut] > getattr(bkgchain,cut):
+                    eventvalid=False
+                    break
+        if eventvalid is False:
+            continue
         
         #It passed cuts; fill entry into output file
-        pe_rf[0] = bkgtree.pe 
-        n9_rf[0] = bkgtree.n9
+        pe_rf[0] = bkgchain.pe 
+        n9_rf[0] = bkgchain.n9
 
-        nhit_rf[0] = bkgtree.nhit
-        mc_energy_rf[0] = bkgtree.mc_energy
-        good_pos_rf[0] = bkgtree.good_pos
-        u_rf[0] = bkgtree.u
-        v_rf[0] = bkgtree.v
-        w_rf[0] = bkgtree.w
-        x_rf[0] = bkgtree.x
-        y_rf[0] = bkgtree.y
-        r_rf[0] = eu.radius(bkgtree.x, bkgtree.y)
-        z_rf[0] = bkgtree.z
-        good_dir_rf[0] = bkgtree.good_dir
-        closestPMT_rf[0] = bkgtree.closestPMT
+        nhit_rf[0] = bkgchain.nhit
+        mc_energy_rf[0] = bkgchain.mc_energy
+        good_pos_rf[0] = bkgchain.good_pos
+        u_rf[0] = bkgchain.u
+        v_rf[0] = bkgchain.v
+        w_rf[0] = bkgchain.w
+        x_rf[0] = bkgchain.x
+        y_rf[0] = bkgchain.y
+        r_rf[0] = eu.radius(bkgchain.x, bkgchain.y)
+        z_rf[0] = bkgchain.z
+        good_dir_rf[0] = bkgchain.good_dir
+        closestPMT_rf[0] = bkgchain.closestPMT
         t_root.Fill()
         entrynum+=1
     #/while(entrynum < max_entries)
     total_time[0] = float(totaltime)
-    cut_acc[0] = float(entrynum)/float(entries_viewed)
+    cut_acceptance[0] = float(entrynum)/float(entries_viewed)
+    allsinglesnum[0] = entries_viewed
+    validsinglesnum[0] = entrynum
     f_root.cd()
     t_root.Write()
     sum_tree.Fill()
