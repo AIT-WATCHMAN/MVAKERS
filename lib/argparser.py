@@ -48,7 +48,7 @@ parser.add_argument('--tankRadius', dest='TANKRADIUS', action='store', type=floa
         help='Radius of tank in mm')
 ##--------------------ADDITIONAL CUTS TO USE PRE-MVA-------------------##
 parser.add_argument('--addcuts', dest='ADDCUTS', action='append', nargs=2,
-        meta_vars=('cutname','cutval'), help='Add a cut to implement '+\
+        metavar=('cutname','cutval'), help='Add a cut to implement '+\
                 'when selecting events buildSB stage. '+\
                 'Variable must be defined in DB directory. '+\
                 '(overwrites any values defined in cuts.json)')
@@ -78,11 +78,7 @@ def checkParserInput(argin):
             print("Please select either the positron or neutron option for"+\
                 "building your signal singles.")
             sys.exit(1)
-    for val in [argin.TIMETHRESH, argin.ZCUT, argin.RADIUSCUT, argin.INTERDIST]:
-        if val is not None and val < 0:
-            print("Negative value given for an input cut value.  Exiting")
-            sys.exit(1)
-
+#TODO: Have some check that makes sure all variables are > 0 that should be
 
 args = parser.parse_args()
 checkParserInput(args)

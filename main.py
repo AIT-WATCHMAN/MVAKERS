@@ -205,12 +205,14 @@ if __name__ == '__main__':
             print("VARIABLES BEING FED IN TO MVA: " + str(vsdict))
             print("METHODS BEING FED IN TO MVA: " + str(methoddict))
         print("RUNNING TMVA ON SIGNAL AND BACKGROUND FILES NOW...")
+        os.chdir(OUTDIR)
         mvaker = tf.TMVARunner(signalfile=sout, backgroundfile=bout,
                 mdict=methoddict, varspedict=vsdict)
         mvaker.RunTMVA(outfile=mvaout,pairs=PAIRS)
-        subprocess.call(["mv","-f","%s/weights"%(mainpath),OUTDIR])
+        #subprocess.call(["mv","-f","%s/weights"%(mainpath),OUTDIR])
 
 
     if RUNGUI is True:
+        os.chdir(OUTDIR)
         tvag.loadResultsInGui(GUIdir=guipath, resultfile=mvaout)
 
