@@ -29,4 +29,4 @@ def loadSinglesVariableDescriptions(variable_dict,variable_db):
             else:
                 print("A variable chosen in variables config is not supported. exiting")
                 sys.exit(0)
-    return prompt_variables
+    return loaded_variables

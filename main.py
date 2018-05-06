@@ -47,6 +47,8 @@ TIMETHRESH=args.TIMETHRESH
 INTERDIST=args.INTERDIST
 RADIUSCUT=args.RADIUSCUT
 ZCUT=args.ZCUT
+flag_cuts = {"r":RADIUSCUT, "z":ZCUT, "interevent_dist":INTERDIST,\
+        "interevent_time":TIMETHRESH}
 
 if BUILD is True and os.path.exists(OUTDIR) is True:
     print("WARNING: YOU ARE BUILDING SIGNAL/BKG FILES TO AN EXISTING DIRECTORY.")
@@ -105,7 +107,12 @@ if __name__ == '__main__':
         print("----LOADING CUTS TO USE AS DEFINED IN CONFIG DIR----")
         with open("%s/%s" % (configpath,"cuts.json"),"r") as f:
             cutdict = json.load(f)
-        
+       
+        print("-----OVERWRITING CUTS IN CONFIG AS DEFINED IN FLAGS-----")
+        for flag in flag_cuts:
+            if flag_cuts[flag] is not None:
+                print("COMMAND LINE CUT OVERRIDE NOT IMPLEMENTED FOR CUT %s"%(flag))
+
         print("---GETTING ALL AVAILABLE BACKGROUND FILES FROM DATADIR---")
         bkgrootfiles=[]
       
