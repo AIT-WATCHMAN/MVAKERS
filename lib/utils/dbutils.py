@@ -3,6 +3,11 @@ import json
 #Some functions for loading description information from the WATCHMVAKERS
 #database for running
 
+def checkCutDict(cutdict,variable_db):
+    '''Checks that all cuts defined in cutdict are a defined variable'''
+    print("CHECK OF VALID DEFINED CUTS STILL NEEDS IMPLEMENTATION")
+    return
+
 def loadPairVariableDescriptions(variable_dict,variable_db):
     loaded_variables = {"variables": {"prompt": {}, "delayed":{},"interevent": {}},
             "spectators": {"prompt": {}, "delayed": {},"interevent": {}}}

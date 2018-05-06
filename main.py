@@ -43,12 +43,11 @@ TANKRADIUS=args.TANKRADIUS
 HALFHEIGHT=args.HALFHEIGHT
 
 #Cuts applied if value is not None
-TIMETHRESH=args.TIMETHRESH
-INTERDIST=args.INTERDIST
-RADIUSCUT=args.RADIUSCUT
-ZCUT=args.ZCUT
-flag_cuts = {"r":RADIUSCUT, "z":ZCUT, "interevent_dist":INTERDIST,\
-        "interevent_time":TIMETHRESH}
+ADDCUTS=args.ADDCUTS
+flag_cuts={}
+if len(ADDCUTS) > 0:
+        for i in xrange(ADDCUTS[0]):
+            flag_cuts[ADDCUTS[0][i]] = ADDCUTS[1][i]
 
 if BUILD is True and os.path.exists(OUTDIR) is True:
     print("WARNING: YOU ARE BUILDING SIGNAL/BKG FILES TO AN EXISTING DIRECTORY.")
@@ -107,12 +106,15 @@ if __name__ == '__main__':
         print("----LOADING CUTS TO USE AS DEFINED IN CONFIG DIR----")
         with open("%s/%s" % (configpath,"cuts.json"),"r") as f:
             cutdict = json.load(f)
-       
+        
         print("-----OVERWRITING CUTS IN CONFIG AS DEFINED IN FLAGS-----")
         for flag in flag_cuts:
             if flag_cuts[flag] is not None:
                 print("COMMAND LINE CUT OVERRIDE NOT IMPLEMENTED FOR CUT %s"%(flag))
-
+        with open("%s/%s" % (dbpath,"WATCHMAKERS_variables.json"),"r") as f:
+            variable_db = json.load(f)
+        du.checkCutDict(cutdict,variable_db)
+        
         print("---GETTING ALL AVAILABLE BACKGROUND FILES FROM DATADIR---")
         bkgrootfiles=[]
       

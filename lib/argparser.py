@@ -47,23 +47,15 @@ parser.add_argument('--shieldThick', dest='SHIELDTHICK', action='store', type=fl
 parser.add_argument('--tankRadius', dest='TANKRADIUS', action='store', type=float,
         help='Radius of tank in mm')
 ##--------------------ADDITIONAL CUTS TO USE PRE-MVA-------------------##
-parser.add_argument('--zcut', dest='ZCUT', action='store', type=float,
-        help='Only consider events with abs(z) less than abs(input)'+\
-                'relative to detector center (overwrites any values in cuts.json)')
-parser.add_argument('--timecut', dest='TIMETHRESH', action='store', type=float,
-        help='If IBD option set, only consider IBD candidates with an interevent time <= input '+\
-                '(overwrites any value given in cuts.json)')
-parser.add_argument('--distcut', dest='INTERDIST', action='store', type=float,
-        help='If IBD option set, only consider IBD candidates with an interevent_dist <= input '+\
-                '(overrites any value given in cuts.json)')
-parser.add_argument('--rcut', dest='RADIUSCUT', action='store', type=float,
-        help='Only consider events with reconstructed r <= input in mm '+\
-                '(overwrites any value given in cuts.json)')
+parser.add_argument('--addcuts', dest='ADDCUTS', action='append', nargs=2,
+        meta_vars=('cutname','cutval'), help='Add a cut to implement '+\
+                'when selecting events buildSB stage. '+\
+                'Variable must be defined in DB directory. '+\
+                '(overwrites any values defined in cuts.json)')
 
-parser.set_defaults(DEBUG=False,JNUM=0, TIMETHRESH=None, BUILD=False,
-        SINGLES=None,PAIRS=False,INTERDIST=None, RADIUSCUT=None,ZCUT=None,
-        DATADIR=None,PHOTOCOVERAGE='25pct',RUNTMVA=False,OUTDIR=defaultout,
-        RUNGUI=False)
+parser.set_defaults(DEBUG=False,JNUM=0, ADDCUTS=[], BUILD=False,
+        SINGLES=None,PAIRS=False, DATADIR=None,PHOTOCOVERAGE='25pct',
+        RUNTMVA=False,OUTDIR=defaultout, RUNGUI=False)
 
 
 def checkParserInput(argin):
