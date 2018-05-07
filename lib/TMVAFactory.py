@@ -101,7 +101,7 @@ class TMVARunner(object):
             factory = self.addPairSpecs(factory, self.vsdict["spectators"])
         else:
             for var in self.vsdict["spectators"]:
-                factory.AddVariable(str(var),str(self.vsdict["spectators"][var]["title"]),
+                factory.AddSpectator(str(var),str(self.vsdict["spectators"][var]["title"]),
                     str(self.vsdict["spectators"][var]["units"]))
         #Add signal and background info. to factory
         sigfile = ROOT.TFile(self.sfile,"READ")
