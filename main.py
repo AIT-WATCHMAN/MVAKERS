@@ -214,8 +214,9 @@ if __name__ == '__main__':
         #For a quick go, I'll weigh the signal events with the rates I know
         #Also, add the signal file also as a background file.  Why not
         mvaker.loadBackgroundFile(sout)
+        print("BACKGROUND FILES: " + str(mvaker.bfiles))
         mvaker.setWeightForBackgroundFile(sout, 1.70E-05)
-        mvaker.setWeightForBackgroundFile(bout, 145)
+        mvaker.setWeightForBackgroundFile(bout, 145.0)
         mvaker.RunTMVA(outfile=mvaout,pairs=PAIRS)
         #subprocess.call(["mv","-f","%s/weights"%(mainpath),OUTDIR])
 

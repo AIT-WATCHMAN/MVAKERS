@@ -9,6 +9,6 @@
     },
     "Likelihood": {
         "type": "kLikelihood",
-        "specs": "H:!V:TransformOutput:PDFInterpol=Spline2:CreateMVAPdfs:NSmoothSig[0]=20:NSmoothBkg[0]=20:NSmoothBkg[1]=0:NSmooth=1:NAvEvtPerBin=50"
+        "specs": "H:!V:TransformOutput:PDFInterpol=Spline2:NSmooth=10:NAvEvtPerBin=50:CreateMVAPdfs"
     }
 }

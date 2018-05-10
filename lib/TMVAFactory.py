@@ -1,6 +1,7 @@
 import ROOT
 from ROOT import gROOT
 import os,sys
+import numpy as np
 import utils.dbutils as du
 
 #Let's make ourselves a simple TMVA factory in python.
@@ -31,7 +32,7 @@ class TMVARunner(object):
         '''for the given filename, set the weight in the weights array that
         corresponds to that file'''
         findex = None
-        for fname,j in enumerate(self.bfiles):
+        for j,fname in enumerate(self.bfiles):
             if fname == f:
                 findex = j
         if findex is not None:
@@ -44,24 +45,24 @@ class TMVARunner(object):
         '''for the given filename, set the weight in the weights array that
         corresponds to that file'''
         findex = None
-        for fname,j in enumerate(self.sfiles):
+        for j,fname in enumerate(self.sfiles):
             if fname == f:
                 findex = j
         if findex is not None:
             self.sweights[findex] = weight
         else:
-            print("Background file not found.  Weight not changed")
+            print("Signal file not found.  Weight not changed")
         return
 
     def loadSignalFile(self,sf):
         '''Add a new signal file to TMVA signal file list'''
-        np.append(self.sfiles,sf)
-        np.append(self.sweights,1.0)
+        self.sfiles.append(sf)
+        self.sweights = np.append(self.sweights,1.0)
     
     def loadBackgroundFile(self,bf):
-        '''Add a new signal file to TMVA signal file list'''
-        np.append(self.bfiles bf)
-        np.append(self.bweights,1.0)
+        '''Add a new background file to TMVA signal file list'''
+        self.bfiles.append(bf)
+        self.bweights = np.append(self.bweights,1.0)
 
     def addCut(self,cut):
         '''
@@ -78,9 +79,6 @@ class TMVARunner(object):
         '''Delete all cuts to be fed to the TMVA factory'''
         self.cuts=""
 
-    def loadBkgFile(self,bf):
-        '''load a new signal file to run the TMVA with.'''
-        self.bfile = bf
 
     def addPairVars(self, factory, vardict):
         for var in vardict["prompt"]:
@@ -139,11 +137,12 @@ class TMVARunner(object):
         for j,sfile in enumerate(self.sfiles):
             sigfile = ROOT.TFile(sfile,"READ")
             signal = sigfile.Get("Output")
-            factory.AddSignalTree(signal, self.sweight[j])
+            factory.AddSignalTree(signal, self.sweights[j])
         for j,bfile in enumerate(self.bfiles):
+            print("ADDING FILE " + str(bfile) + " TO BKGTREE\n")
             bkgfile = ROOT.TFile(bfile,"READ")
             background = bkgfile.Get("Output")
-            factory.AddBackgroundTree(background, self.bweight[j])
+            factory.AddBackgroundTree(background, self.bweights[j])
 
         #Now, we book our methods to use in the TMVA.
         print("BOOKING METHODS...")
