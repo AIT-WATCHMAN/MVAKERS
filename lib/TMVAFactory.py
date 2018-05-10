@@ -9,31 +9,59 @@ import utils.dbutils as du
 #variables.
 
 class TMVARunner(object):
-    def __init__(self, signalfile=None, backgroundfile=None, mdict=None, 
+    def __init__(self, signalfiles=[], backgroundfiles=[], mdict=None, 
             varspedict=None):
         '''
         This class takes in a signal file, background file, method
         dictionary, and variable dictionary and runs ROOT's TMVA classifiers.
         '''
-        self.sfile = signalfile
-        self.bfile = backgroundfile
+        self.sfiles = signalfiles
+        self.bfiles = backgroundfiles
         self.mdict = mdict
         self.vsdict = varspedict
 
         #weights for signal and background
-        self.sw = 1.0
-        self.bw = 1.0
+        self.sweights = np.ones(len(signalfiles))
+        self.bweights = np.ones(len(backgroundfiles))
 
         #Define a string of cuts, ROOT Style
         self.cuts = ""
 
-    def setWeights(self,signal=1.0,background=1.0):
-        self.sw = signal
-        self.bw = background
+    def setWeightForBackgroundFile(self,f,weight):
+        '''for the given filename, set the weight in the weights array that
+        corresponds to that file'''
+        findex = None
+        for fname,j in enumerate(self.bfiles):
+            if fname == f:
+                findex = j
+        if findex is not None:
+            self.bweights[findex] = weight
+        else:
+            print("Background file not found.  Weight not changed")
+        return
+
+    def setWeightForSignalFile(self,f,weight):
+        '''for the given filename, set the weight in the weights array that
+        corresponds to that file'''
+        findex = None
+        for fname,j in enumerate(self.sfiles):
+            if fname == f:
+                findex = j
+        if findex is not None:
+            self.sweights[findex] = weight
+        else:
+            print("Background file not found.  Weight not changed")
+        return
 
     def loadSignalFile(self,sf):
-        '''Choose a new signal file to run the TMVA with'''
-        self.sfile = sf
+        '''Add a new signal file to TMVA signal file list'''
+        np.append(self.sfiles,sf)
+        np.append(self.sweights,1.0)
+    
+    def loadBackgroundFile(self,bf):
+        '''Add a new signal file to TMVA signal file list'''
+        np.append(self.bfiles bf)
+        np.append(self.bweights,1.0)
 
     def addCut(self,cut):
         '''
@@ -81,6 +109,10 @@ class TMVARunner(object):
 
     def RunTMVA(self,outfile='TMVA_output.root',pairs=True):
         '''Runs the TMVA with the given settings.'''
+        if len(self.sfiles)==0 or len(self.bfiles)==0:
+            print("THERE ARE EITHER NO SIGNAL FILES OR BACKGROUND FILES.")
+            print("PLEASE LOAD AT LEAST ONE OF EACH TYPE FOR THE MVA")
+            return
 
         ROOT.TMVA.Tools.Instance()
 
@@ -104,12 +136,14 @@ class TMVARunner(object):
                 factory.AddSpectator(str(var),str(self.vsdict["spectators"][var]["title"]),
                     str(self.vsdict["spectators"][var]["units"]))
         #Add signal and background info. to factory
-        sigfile = ROOT.TFile(self.sfile,"READ")
-        bkgfile = ROOT.TFile(self.bfile,"READ")
-        signal = sigfile.Get("Output")
-        background = bkgfile.Get("Output")
-        factory.AddSignalTree(signal, self.sw)
-        factory.AddBackgroundTree(background, self.bw)
+        for j,sfile in enumerate(self.sfiles):
+            sigfile = ROOT.TFile(sfile,"READ")
+            signal = sigfile.Get("Output")
+            factory.AddSignalTree(signal, self.sweight[j])
+        for j,bfile in enumerate(self.bfiles):
+            bkgfile = ROOT.TFile(bfile,"READ")
+            background = bkgfile.Get("Output")
+            factory.AddBackgroundTree(background, self.bweight[j])
 
         #Now, we book our methods to use in the TMVA.
         print("BOOKING METHODS...")

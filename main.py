@@ -74,9 +74,10 @@ if __name__ == '__main__':
         setupdict = json.load(f)
     MAXSIGNALEV = setupdict["MAXSIGNALEV"]
     MAXBKGEV = setupdict["MAXBKGEV"]
+    BKGTYPES = setupdict["BKGTYPES"]
 
     sout = "%s/signal.root" % (OUTDIR)
-    bout = "%s/background.root" % (OUTDIR)
+    bout = "%s/background_PMTWV.root" % (OUTDIR)
     mvaout = "%s/TMVA_output.root" % (OUTDIR)
 
 	
@@ -116,14 +117,15 @@ if __name__ == '__main__':
         du.checkCutDict(cutdict,variable_db)
         
         print("---GETTING ALL AVAILABLE BACKGROUND FILES FROM DATADIR---")
-        bkgrootfiles=[]
-      
-        Bkg_types = ["PMT","WaterVolume"]
-        for btype in Bkg_types:
-            type_candidates = glob.glob("%s/%s/*%s*" % (DATADIR,PC,btype))
-            for candidate in type_candidates:
-                if "CHAIN" in candidate:
-                    bkgrootfiles.append(candidate)
+        bkgrootfiles={}
+        if "PMT_RADON" in BKGTYPES:
+            bkgrootfiles["PMT_RADON"] = []
+            Bkg_types = ["PMT","WaterVolume"]
+            for btype in Bkg_types:
+                type_candidates = glob.glob("%s/%s/*%s*" % (DATADIR,PC,btype))
+                for candidate in type_candidates:
+                    if "CHAIN" in candidate:
+                        bkgrootfiles["PMT_RADON"].append(candidate)
 
         if DEBUG is True:
             print("BKGFILES BEING USED: " + str(bkgrootfiles))
@@ -150,7 +152,7 @@ if __name__ == '__main__':
         if DEBUG is True:
             print("SIGNAL FILES BEING USED: " + str(sigrootfiles))
         
-        if len(bkgrootfiles) == 0:
+        if len(sigrootfiles) == 0:
             print("NO SIGNAL FILES FOUND.  EXITING")
         print("SIGNAL FILES ACQUIRED.")
 
@@ -172,14 +174,14 @@ if __name__ == '__main__':
                     rootfiles=sigrootfiles,outfile=sout,max_entries=MAXSIGNALEV)
             print("SIGNAL FILES COMPLETE.  PREPARING SINGLE BKG. NTUPLES...") 
             bs.getBackgroundSingles(ratedict=rates,cutdict=cutdict,
-                    rootfiles=bkgrootfiles,outfile=bout,max_entries=MAXBKGEV)
+                    rootfiles=bkgrootfiles["PMT_RADON"],outfile=bout,max_entries=MAXBKGEV)
         if PAIRS is True:
             print("PREPARING PAIRED SIGNAL NTUPLE FILES NOW...")
             sp.getSignalPairs(ratedict=rates,cutdict=cutdict, 
                     rootfiles=sigrootfiles,outfile=sout,max_entries=MAXSIGNALEV)
             print("SIGNAL FILES COMPLETE.  PREPAIRING PAIR BKG. NTUPLES...")
             bp.getBackgroundPairs(ratedict=rates, cutdict=cutdict,
-                    rootfiles=bkgrootfiles,outfile=bout,max_entries=MAXBKGEV)
+                    rootfiles=bkgrootfiles["PMT_RADON"],outfile=bout,max_entries=MAXBKGEV)
         print("SIGNAL AND OUTPUT FILES SAVED TO %s" % OUTDIR)
 
 
@@ -206,8 +208,14 @@ if __name__ == '__main__':
             print("METHODS BEING FED IN TO MVA: " + str(methoddict))
         print("RUNNING TMVA ON SIGNAL AND BACKGROUND FILES NOW...")
         os.chdir(OUTDIR)
-        mvaker = tf.TMVARunner(signalfile=sout, backgroundfile=bout,
+        mvaker = tf.TMVARunner(signalfiles=[sout], backgroundfiles=[bout],
                 mdict=methoddict, varspedict=vsdict)
+        #FIXME: Want to have the weights automatically called from the rootfiles
+        #For a quick go, I'll weigh the signal events with the rates I know
+        #Also, add the signal file also as a background file.  Why not
+        mvaker.loadBackgroundFile(sout)
+        mvaker.setWeightForBackgroundFile(sout, 1.70E-05)
+        mvaker.setWeightForBackgroundFile(bout, 145)
         mvaker.RunTMVA(outfile=mvaout,pairs=PAIRS)
         #subprocess.call(["mv","-f","%s/weights"%(mainpath),OUTDIR])
 
