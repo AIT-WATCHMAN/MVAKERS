@@ -1,11 +1,11 @@
 #!/bin/sh
-#MSUB -N WM_MVAKERSRunner #name of job
+#MSUB -N WM_MVAToolsRunner #name of job
 #MSUB -A ared   #sets bank account
 #MSUB -l nodes=1:ppn=1,walltime=23:59:59,partition=borax #uses one node
 #MSUB -q pbatch     #pool
-#MSUB -o /usr/gapps/adg/geant4/rat_pac_and_dependency/MVAKERS/GridLog_merge.log
-#MSUB -e /usr/gapps/adg/geant4/rat_pac_and_dependency/MVAKERS/GridErr_merge.err
-#MSUB -d /usr/gapps/adg/geant4/rat_pac_and_dependency/MVAKERS #dir to run from
+#MSUB -o /p/lscratchh/pershing/watchmakers_9mtank/GridLog.log
+#MSUB -e /p/lscratchh/pershing/watchmakers_9mtank/GridErr.err
+#MSUB -d /p/lscratchh/pershing/watchmakers_9mtank/ #dir to run from
 #MSUB -V
 #MSUB           # no more psub commands
 TANKRADIUS=9000.
@@ -24,6 +24,6 @@ source ${RPDEPENDS}/rat-g4.10.03/rat-pac/env.sh
 source ${RPDEPENDS}/watchmakers/env_wm.sh
 export G4NEUTRONHP_USE_ONLY_PHOTONEVAPORATION=1
 
-#Go to the directory containing the MVAKERS, then run them
+#Go to the directory containing the MVATools, then run them
 cd $MERGEDIR
-watch --newVers -j 1 -M -N 400 -C 20pct --shieldThick ${SHIELDTHICKNESS} --tankRadius ${TANKRADIUS} --halfHeight ${HALFHEIGHT}
+watch --newVers -j 1 -m -N 400 -e 20000 -C 20pct --shieldThick ${SHIELDTHICKNESS} --tankRadius ${TANKRADIUS} --halfHeight ${HALFHEIGHT}

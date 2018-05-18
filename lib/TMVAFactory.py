@@ -134,16 +134,17 @@ class TMVARunner(object):
                 factory.AddSpectator(str(var),str(self.vsdict["spectators"][var]["title"]),
                     str(self.vsdict["spectators"][var]["units"]))
         #Add signal and background info. to factory
+        factory_sfiles, factory_strees = [],[]
+        factory_bfiles, factory_btrees = [],[]
         for j,sfile in enumerate(self.sfiles):
-            sigfile = ROOT.TFile(sfile,"READ")
-            signal = sigfile.Get("Output")
-            factory.AddSignalTree(signal, self.sweights[j])
+            factory_sfiles.append(ROOT.TFile(sfile,"READ"))
+            factory_strees.append(factory_sfiles[j].Get("Output"))
+            factory.AddSignalTree(factory_strees[j], self.sweights[j])
         for j,bfile in enumerate(self.bfiles):
             print("ADDING FILE " + str(bfile) + " TO BKGTREE\n")
-            bkgfile = ROOT.TFile(bfile,"READ")
-            background = bkgfile.Get("Output")
-            factory.AddBackgroundTree(background, self.bweights[j])
-
+            factory_bfiles.append(ROOT.TFile(bfile,"READ"))
+            factory_btrees.append(factory_bfiles[j].Get("Output"))
+            factory.AddBackgroundTree(factory_btrees[j], self.bweights[j])
         #Now, we book our methods to use in the TMVA.
         print("BOOKING METHODS...")
         for method in self.mdict:
@@ -160,6 +161,11 @@ class TMVARunner(object):
                     print("SPECS: " + str(specs))
             else:
                 specs = self.mdict[method]["specs"]
+            #Prepare the signal and background trees
+            #First two entries would be any cuts we want to apply
+            mycuts = ROOT.TCut(self.cuts)
+            mycutb = ROOT.TCut(self.cuts) 
+            factory.PrepareTrainingAndTestTree(mycuts,mycutb,"") 
             print("BOOKING..." + str(self.mdict[method]["type"]))
             factory.BookMethod(getattr(ROOT.TMVA.Types,
                 str(self.mdict[method]["type"])),str(method),str(specs))

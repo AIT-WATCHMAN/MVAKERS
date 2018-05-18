@@ -213,10 +213,15 @@ if __name__ == '__main__':
         #FIXME: Want to have the weights automatically called from the rootfiles
         #For a quick go, I'll weigh the signal events with the rates I know
         #Also, add the signal file also as a background file.  Why not
-        mvaker.loadBackgroundFile(sout)
+        breac_out ="%s/background_reac.root"%(OUTDIR)
+        mvaker.loadBackgroundFile(breac_out)
         print("BACKGROUND FILES: " + str(mvaker.bfiles))
-        mvaker.setWeightForBackgroundFile(sout, 1.70E-05)
-        mvaker.setWeightForBackgroundFile(bout, 145.0)
+        mvaker.setWeightForSignalFile(sout, (1.70E-05))
+        mvaker.setWeightForBackgroundFile(breac_out, (1.15*1.70E-05))
+        if PAIRS is True:
+            mvaker.setWeightForBackgroundFile(bout, 14.99)
+        else:
+            mvaker.setWeightForBackgroundFile(bout, 145.0)
         mvaker.RunTMVA(outfile=mvaout,pairs=PAIRS)
         #subprocess.call(["mv","-f","%s/weights"%(mainpath),OUTDIR])
 

@@ -1,13 +1,13 @@
 {
+    "pairs": {
+        "interevent_dist": 3000.0, 
+        "interevent_time": 100000.0
+    }, 
     "singles": {
+        "closestPMT": 250.0, 
         "good_pos": 0.1, 
         "n9": 5, 
-        "nhit": 4,
-        "closestPMT": 250.0,
+        "nhit": 4, 
         "pe": 3.0
-    },
-    "pairs": {
-        "interevent_dist": 3000.0,
-        "interevent_time": 100000.0
     }
 }
