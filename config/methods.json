@@ -1,7 +1,7 @@
 {
     "CutsGA": {
         "type": "kCuts",
-        "specs": "H:!V:FitMethod=GA:EffSel:Steps=40:Cycles=3:PopSize=400:SC_steps=10:SC_rate=5:SC_factor=0.95:VarProp=FSmart"
+        "specs": "H:!V:FitMethod=GA:EffSel:Steps=40:Cycles=3:PopSize=400:SC_steps=10:SC_rate=5:SC_factor=0.95"
     },
     "BDT": {
         "type": "kBDT",
@@ -9,6 +9,7 @@
     },
     "Likelihood": {
         "type": "kLikelihood",
-        "specs": "H:!V:TransformOutput:PDFInterpol=Spline2:NSmooth=10:NAvEvtPerBin=50:CreateMVAPdfs"
+        "specs": "H:!V:TransformOutput:Nbins=55:NbinsSig[0]=62:NbinsSig[2]=70:NbinsBkg[0]=62:NbinsBkg[2]=70:PDFInterpol=Spline2:NSmooth=6:CreateMVAPdfs"
     }
+}
 }

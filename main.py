@@ -206,25 +206,26 @@ if __name__ == '__main__':
         if DEBUG is True:
             print("VARIABLES BEING FED IN TO MVA: " + str(vsdict))
             print("METHODS BEING FED IN TO MVA: " + str(methoddict))
+            print("BACKGROUND FILES: " + str(mvaker.bfiles))
         print("RUNNING TMVA ON SIGNAL AND BACKGROUND FILES NOW...")
         os.chdir(OUTDIR)
         mvaker = tf.TMVARunner(signalfiles=[sout], backgroundfiles=[bout],
                 mdict=methoddict, varspedict=vsdict)
+        
         #FIXME: Want to have the weights automatically called from the rootfiles
         #For a quick go, I'll weigh the signal events with the rates I know
         #Also, add the signal file also as a background file.  Why not
-        breac_out ="%s/background_reac.root"%(OUTDIR)
-        mvaker.loadBackgroundFile(breac_out)
-        print("BACKGROUND FILES: " + str(mvaker.bfiles))
-        mvaker.setWeightForSignalFile(sout, (1.70E-05))
-        mvaker.setWeightForBackgroundFile(breac_out, (1.15*1.70E-05))
-        if PAIRS is True:
-            mvaker.setWeightForBackgroundFile(bout, 14.99)
-        else:
-            mvaker.setWeightForBackgroundFile(bout, 145.0)
-        mvaker.RunTMVA(outfile=mvaout,pairs=PAIRS)
+        #breac_out ="%s/background_reac.root"%(OUTDIR)
+        #mvaker.loadBackgroundFile(breac_out)
+        #mvaker.setWeightForSignalFile(sout, (1.70E-05))
+        #if PAIRS is True:
+        #    mvaker.setWeightForBackgroundFile(bout, 14.99)
+        #else:
+        #    mvaker.setWeightForBackgroundFile(bout, 145.0)
+        #mvaker.RunTMVA(outfile=mvaout,pairs=PAIRS)
         #subprocess.call(["mv","-f","%s/weights"%(mainpath),OUTDIR])
-
+	with open(OUTDIR+"/used_method_config.json","w") as f:
+            json.dump(methoddict,f,sort_keys=True,indent=4)
 
     if RUNGUI is True:
         os.chdir(OUTDIR)
