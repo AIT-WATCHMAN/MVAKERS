@@ -148,25 +148,15 @@ class TMVARunner(object):
         #Now, we book our methods to use in the TMVA.
         print("BOOKING METHODS...")
         for method in self.mdict:
-            #FIXME: Have a nice parser class for making these strings
-            if self.mdict[method]["type"] == "kCuts":
-                specs = "!H:!V:FitMethod=MC:EffSel:SampleSize=15000000:VarProp=FSmart"
-                if method == "CutsD":
-                    specs = specs + ":VarTransform=Decorrelate"
-                if method == "CutsPCA":
-                    specs = specs + ":VarTransform=PCA"
-                if method == "CutsGA":
-                    #TODO: Have defaults in dictionary in DB, put mods in mdict  
-                    specs = self.mdict[method]["specs"]
-                    print("SPECS: " + str(specs))
-            else:
-                specs = self.mdict[method]["specs"]
+            print("METHOD BEING LOADED: " + str(method))
+            specs = self.mdict[method]["specs"]
+            print("SPECS: " + str(specs))
             #Prepare the signal and background trees
             #First two entries would be any cuts we want to apply
             mycuts = ROOT.TCut(self.cuts)
             mycutb = ROOT.TCut(self.cuts) 
             factory.PrepareTrainingAndTestTree(mycuts,mycutb,"") 
-            print("BOOKING..." + str(self.mdict[method]["type"]))
+            print("BOOKING YOUR METHOD OF TYPE " + str(self.mdict[method]["type"]))
             factory.BookMethod(getattr(ROOT.TMVA.Types,
                 str(self.mdict[method]["type"])),str(method),str(specs))
 

@@ -1,15 +1,27 @@
 {
     "CutsGA": {
+        "comments": "Genetic Algorithm Cuts Example", 
         "type": "kCuts",
         "specs": "H:!V:FitMethod=GA:EffSel:Steps=40:Cycles=3:PopSize=400:SC_steps=10:SC_rate=5:SC_factor=0.95"
     },
+    "CutsD": {
+        "comments": "Decorrelation performed before cut selection example", 
+        "type": "kCuts",
+        "specs": "H:!V:FitMethod=GA:EffSel:Steps=40:Cycles=3:PopSize=400:SC_steps=10:SC_rate=5:SC_factor=0.95:VarTransform=Decorrelate"
+    },
+    "CutsPCA": {
+        "comments": "Principal Component Analysis before cut selection example", 
+        "type": "kCuts",
+        "specs": "H:!V:FitMethod=GA:EffSel:Steps=40:Cycles=3:PopSize=400:SC_steps=10:SC_rate=5:SC_factor=0.95:VarTransform=PCA"
+    },
     "BDT": {
+        "comments": "Vanilla BDT settings example",
         "type": "kBDT",
         "specs": "!H:!V:NTrees=1000:MinNodeSize=2.5%:MaxDepth=3:BoostType=AdaBoost:AdaBoostBeta=0.5:UseBaggedBoost:BaggedSampleFraction=0.5:SeparationType=GiniIndex:ncuts=20"
     },
     "Likelihood": {
+        "comments": "Vannilla Likelihood settings example. NOTE: The smoothing, binning, and interpolation can take tweaking before plots/binning looks nice!",
         "type": "kLikelihood",
         "specs": "H:!V:TransformOutput:Nbins=55:NbinsSig[0]=62:NbinsSig[2]=70:NbinsBkg[0]=62:NbinsBkg[2]=70:PDFInterpol=Spline2:NSmooth=6:CreateMVAPdfs"
     }
-}
 }
