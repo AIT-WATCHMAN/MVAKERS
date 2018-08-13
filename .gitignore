@@ -3,3 +3,5 @@ weights/
 data/
 output/*
 plots/
+*.pyc
+*__pycache__*
